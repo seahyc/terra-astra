@@ -1,6 +1,8 @@
 # Terra Astra — Earth, Constellated
 
-First prototype, 9 September 2026.
+v0.2 — continuity, light, and the human reveal. 9 September 2026.
+
+v0.1 is preserved as saved Site version 1 (source d5e3ad98c03d8a5841e37b9bebe0bff045298535).
 
 ## Implemented experience
 - A real geographic globe drawn from star point clouds, geographic threads, and historical city lights.
@@ -25,10 +27,27 @@ Natural Earth geography is public domain. Night lights use NASA Earth Observator
 
 ## Current scope and limits
 - Detailed navigation covers central Singapore, not global street detail.
-- The camera approach fades between global and local data levels. Intermediate levels have less detail.
+- Global geography overlaps regional coastline detail during flight. Detailed streets still cover central Singapore only; the feathered edge is an artistic transition, not additional street coverage.
 - Terrain elevation, population estimates, real profiles and a live social network are future work.
 - A star's brightness is artistic styling, never a person's worth.
 - Device-specific WebGL appearance and real iPhone performance require owner review.
 
 ## Verification
 TypeScript checking and the production build passed during implementation. All nine binary layers were checked for byte counts, finite coordinates and spherical radii. Browser review covers a desktop viewport and a 390 × 844 iframe representing a phone layout. The review browser has WebGL disabled, so its visual and interaction results apply to the Canvas fallback. A physical phone and the WebGL shader path were not available for visual verification.
+
+
+## v0.2 changes
+- Return flights rise above Singapore before changing direction, eliminating the early low-altitude turn away from all detailed data.
+- Regional geography stays visible between the global and city levels. City stars use a stable, spatially mixed prefix with altitude-dependent counts, size, and opacity, avoiding a dense white patch during approach.
+- Street points and lines fade inside the actual OSM coverage edges. Authored story places retain their surrounding street context. Coastline threads are quieter at orbit scale.
+- Selecting a person dims the city over time, reveals the three stars, then draws their connections. The opening sentence follows; the full story expands through an accessible Collapsible control.
+- City introductory copy recedes after arrival or exploration. The journey indicator reaches 03/03 for a selected life.
+- Phone story framing responds to the actual panel height. Long place labels switch sides to avoid clipping and controls. Reduced motion removes flight, camera easing, and reveal delays.
+- The fallback shares edge weights, draw ranges, and reveal timing; its reduced point budget has a separate exposure correction. It remains an approximation of WebGL.
+
+## v0.2 verification
+- `node scripts/check-choreography.mjs`: 482 sampled camera positions along descent and return retain actual visible geographic source vertices. Additional checks cover city detail budgets, coverage-edge feathering, authored places, and reveal/reduced-motion timing.
+- Desktop and 390 × 844 phone-width browser checks cover the globe, descent, return, story selection, expansion, changing lives, closing, and paused-motion travel.
+- All three Amina place labels remain within the phone width and above the expanded story panel.
+- TypeScript checking and the production build are run before saving the version. The review browser exposes only Canvas2D, so WebGL visual appearance and physical-device performance still need owner review.
+- No new source data, personal profiles, location tracking, or backend capabilities were added.
