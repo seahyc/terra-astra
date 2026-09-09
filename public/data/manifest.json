@@ -1,0 +1,77 @@
+{
+  "schema": 1,
+  "seed": 260909,
+  "prepared": "2026-09-09",
+  "layers": {
+    "land": {
+      "count": 45433,
+      "stride": 6,
+      "bytes": 1090392
+    },
+    "coast": {
+      "count": 20958,
+      "stride": 6,
+      "bytes": 502992
+    },
+    "coast-lines": {
+      "count": 31888,
+      "stride": 3,
+      "bytes": 382656
+    },
+    "lights": {
+      "count": 22081,
+      "stride": 6,
+      "bytes": 529944
+    },
+    "borders": {
+      "count": 157432,
+      "stride": 3,
+      "bytes": 1889184
+    },
+    "regional-lines": {
+      "count": 32552,
+      "stride": 3,
+      "bytes": 390624
+    },
+    "singapore-coast": {
+      "count": 4378,
+      "stride": 6,
+      "bytes": 105072
+    },
+    "singapore-streets": {
+      "count": 126708,
+      "stride": 3,
+      "bytes": 1520496
+    },
+    "singapore-stars": {
+      "count": 70726,
+      "stride": 6,
+      "bytes": 1697424
+    }
+  },
+  "streetWays": 24816,
+  "streetSegments": 63354,
+  "streetNames": 1562,
+  "nightlightsYear": 2016,
+  "sources": [
+    {
+      "name": "Natural Earth",
+      "url": "https://www.naturalearthdata.com/",
+      "license": "Public domain",
+      "use": "Global and regional geography"
+    },
+    {
+      "name": "NASA Earth Observatory / Black Marble 2016",
+      "url": "https://science.nasa.gov/earth/earth-observatory/earth-at-night/maps/",
+      "credit": "NASA Earth Observatory images by Joshua Stevens, using Suomi NPP VIIRS data from Miguel Roman, NASA GSFC",
+      "use": "Artistically sampled historical night-light intensity; not population"
+    },
+    {
+      "name": "OpenStreetMap contributors",
+      "url": "https://www.openstreetmap.org/copyright",
+      "license": "ODbL",
+      "use": "Singapore street geometry, retrieved 2026-09-09"
+    }
+  ],
+  "humanLayer": "Fictional authored stories; no real people or live locations"
+}
