@@ -1,6 +1,8 @@
 # Terra Astra — Earth, Constellated
 
-v0.2 — continuity, light, and the human reveal. 9 September 2026.
+v0.2.1 — build history, 12 September 2026. The geographic engine remains the v0.2 refinement.
+
+Release history and recovery: `CHANGELOG.md`, `lib/terra/releases.ts`, and `/history`. Proposed next feature build: `docs/NEXT-BUILD.md`.
 
 v0.1 is preserved as saved Site version 1 (source d5e3ad98c03d8a5841e37b9bebe0bff045298535).
 

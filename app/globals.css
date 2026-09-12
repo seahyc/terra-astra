@@ -45,3 +45,43 @@ html{color-scheme:dark}.story-sheet,.about-dialog,.tuning-dialog{scrollbar-width
 .story-sheet.motion-paused{animation:none!important;transition:none!important}
 
 .map-star[data-label-side=left] .marker-label{left:auto;right:41px}
+
+/* Release history is a quiet reading surface beside the star field. */
+.credit-links{display:flex;align-items:center;gap:18px}
+.version-link{color:#cab994;white-space:nowrap;text-decoration:underline!important;text-underline-offset:4px}
+.about-history-link{font-size:14px;color:#d6c4a0;text-underline-offset:4px}
+.build-history{max-width:1080px;margin:auto;padding:36px 44px 60px;min-height:100svh}
+.history-header{display:flex;align-items:center;justify-content:space-between;gap:24px}
+.history-header a{text-decoration:none}
+.history-return{font-size:14px;color:#c9bb9e;padding:12px 0;white-space:nowrap}
+.history-return span{margin-left:10px}
+.history-intro{margin:90px 0 56px;max-width:610px}
+.history-intro h1{font:400 clamp(44px,6vw,70px)/1.1 Georgia,serif;letter-spacing:-.035em;color:#e5d4b1;margin:18px 0 22px}
+.history-intro>p:last-child{color:#a7b8c3;font-size:17px;line-height:1.7}
+.release-list{padding:0;margin:0;list-style:none;border-top:1px solid #253642}
+.release{display:grid;grid-template-columns:200px 1fr;gap:44px;padding:38px 0 42px;border-bottom:1px solid #253642}
+.release-meta{display:flex;flex-direction:column;align-items:flex-start;gap:12px}
+.release-number{font:400 30px/1 Georgia,serif;color:#e0cba5}
+.release-kind{font-size:13px;color:#9fb0ba}
+.current-release{color:#e5d2ab}
+.release-meta time{font-size:13px;line-height:1.5;color:#8097a5}
+.release-content h2{font:400 28px/1.25 Georgia,serif;color:#e3e8e9;margin:0 0 20px}
+.release-content ul{padding-left:18px;margin:0;color:#adbec8;font-size:16px;line-height:1.7}
+.release-content li{padding-left:3px;margin:9px 0}
+.release-content li::marker{color:#7b8890}
+.release-review{font-size:14px;line-height:1.65;color:#8fa5b2;margin:25px 0 0;max-width:640px}
+.release-review strong{display:block;color:#c8d1d5;font-weight:400;margin-bottom:6px}
+.history-footer{font-size:14px;line-height:1.65;color:#869ca9;margin-top:32px}
+@media(max-width:700px){
+ .credits .credit-links{display:flex;gap:14px}
+ .build-history{padding:24px 24px 44px}
+ .history-header{gap:16px}
+ .history-header .wordmark{font-size:13px;letter-spacing:.12em}
+ .history-header .wordmark i{margin:0 3px}
+ .history-return{font-size:13px}
+ .history-intro{margin:62px 0 36px}
+ .release{grid-template-columns:1fr;gap:22px;padding:30px 0}
+ .release-meta{flex-direction:row;flex-wrap:wrap;align-items:center;gap:12px 18px}
+ .release-meta time{width:100%}
+ .release-content h2{font-size:26px}
+}
