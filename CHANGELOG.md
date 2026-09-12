@@ -2,6 +2,16 @@
 
 Semantic versions label the experience; Sites version numbers identify saved deployment packages. They are separate counters. `lib/terra/releases.ts` is the source for the public history page and current build badge. Git tags identify exact source snapshots; native Sites records are authoritative for save/deploy status.
 
+## v0.3 — 2026-09-12 — A light you remember
+- Adds independent shimmer rhythms, sparse diffraction glints, brighter cores and a fuller halo to geographic stars. Includes a Star shimmer slider; pause/reduced motion stops the effect.
+- Keeps the last visited fictional life independently of its panel. On return, its places merge by their projected separation into one geographically anchored warm glimmer with the same pulse.
+- Recalls the visited places after a city pan, holds the orbit before showing the closing line, and leaves a quiet residual light. New journeys clear the remembered life; unvisited journeys return neutrally.
+- Preserves more city context around a selection, scales city point budgets with screen area, and delays turning in portrait views so the remembered light stays visible.
+- Removes static star glyphs that obscured the rendered human shimmer while retaining labels and accessible hit targets.
+- Verification: engine lifecycle and deterministic light checks; 482 geographic flight frames and 1,446 projected remembered-life return frames across desktop and phone dimensions; TypeScript and production build.
+- No v0.3 browser pixel comparison or physical-device performance review was performed. Prior v0.2 Canvas screenshots are historical evidence, not verification of this shader change.
+- Preserves the v0.2.1 baseline at source `44b193b2a6a6791de52d32bb676ffb336cd91713`, tag `v0.2.1`, saved Sites version 3 (`appgprj_6aa175fa488c8191a2677ce883c203a7~appgver_63a7b36f6fdc81919d643c440acb14fe`).
+
 ## v0.2.1 — 2026-09-12 — Build history
 - Adds `/history`, a visible build number and an About link to the release record.
 - Records changes and review limits for each milestone.

@@ -1,5 +1,6 @@
 /** A reduced-detail, 2D projection of the same scene when WebGL is unavailable. */
 import * as THREE from 'three';
+import { scintillation } from './scintillation';
 export class CanvasStarRenderer {
  readonly domElement=document.createElement('canvas');
  outputColorSpace=THREE.SRGBColorSpace;
@@ -19,7 +20,10 @@ export class CanvasStarRenderer {
  this.matrix.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);const m=this.matrix.elements,cp=camera.position;
  const project=(x:number,y:number,z:number)=>{const q=m[3]*x+m[7]*y+m[11]*z+m[15];if(q<=0)return null;const px=(m[0]*x+m[4]*y+m[8]*z+m[12])/q,py=(m[1]*x+m[5]*y+m[9]*z+m[13])/q;if(px< -1.2||px>1.2||py< -1.2||py>1.2)return null;return [(px*.5+.5)*w,(-py*.5+.5)*h];};
  const drawPoints=(o:THREE.Points,background=false)=>{if(!o.visible)return;const mat=o.material as THREE.ShaderMaterial,u=mat.uniforms;if(!u?.opacity||u.opacity.value<.003)return;const a=o.geometry.getAttribute('position'),b=o.geometry.getAttribute('brightness'),sz=o.geometry.getAttribute('starSize'),ph=o.geometry.getAttribute('phase'),revealAt=o.geometry.getAttribute('revealAt');if(!a||!b||!sz)return;const tint='#'+(u.tint.value as THREE.Color).getHexString(),sprite=this.sprite(tint);const count=Math.min(a.count,o.geometry.drawRange.count);const step=Math.max(1,Math.ceil(a.count/(background?350:o.userData.fallbackExposure?12000:5000)));ctx.globalCompositeOperation='lighter';
- for(let i=0;i<count;i+=step){const x=a.getX(i),y=a.getY(i),z=a.getZ(i);if(!background&&x*cp.x+y*cp.y+z*cp.z<x*x+y*y+z*z)continue;const p=project(x,y,z);if(!p)continue;const tw=1+(u.motion.value?Math.sin(u.time.value*.65+ph.getX(i))*.06:0);const size=sz.getX(i)*u.zoomFactor.value*u.sizeScale.value*(2.6+u.glow.value*.7);const t=Math.max(0,Math.min(1,(u.reveal.value-revealAt.getX(i))/.18)),reveal=t*t*(3-2*t);ctx.globalAlpha=Math.min(1,b.getX(i)*u.opacity.value*tw*.95*reveal*(o.userData.fallbackExposure||1));ctx.drawImage(sprite,p[0]-size/2,p[1]-size/2,size,size);}
+ for(let i=0;i<count;i+=step){const x=a.getX(i),y=a.getY(i),z=a.getZ(i);if(!background&&x*cp.x+y*cp.y+z*cp.z<x*x+y*y+z*z)continue;const p=project(x,y,z);if(!p)continue;const light=scintillation(u.time.value,ph.getX(i),!!u.motion.value,u.sparkle.value,u.signature.value);const size=sz.getX(i)*u.zoomFactor.value*u.sizeScale.value*(2.8+u.glow.value*.7)*light.size;const t=Math.max(0,Math.min(1,(u.reveal.value-revealAt.getX(i))/.18)),reveal=t*t*(3-2*t);ctx.globalAlpha=Math.min(1,b.getX(i)*u.opacity.value*light.brightness*.95*reveal*(o.userData.fallbackExposure||1));ctx.drawImage(sprite,p[0]-size/2,p[1]-size/2,size,size);
+ // A few short diffraction rays give glints definition without brightening the whole map.
+ if(light.glint>.12&&size>3){ctx.globalAlpha*=Math.min(.55,light.glint*.55);ctx.strokeStyle=tint;ctx.lineWidth=.55;const arm=size*(.32+light.glint*.12);ctx.beginPath();ctx.moveTo(p[0]-arm,p[1]);ctx.lineTo(p[0]+arm,p[1]);ctx.moveTo(p[0],p[1]-arm);ctx.lineTo(p[0],p[1]+arm);ctx.stroke();}}
+
  ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';};
  for(const o of scene.children)if(o instanceof THREE.Points)drawPoints(o,true);
  // Occlude distant stars with the actual projected silhouette of the globe.

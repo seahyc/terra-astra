@@ -43,6 +43,13 @@ html{color-scheme:dark}.story-sheet,.about-dialog,.tuning-dialog{scrollbar-width
 }
 
 .story-sheet.motion-paused{animation:none!important;transition:none!important}
+.is-settling .opening{opacity:0;transition:none}
+.return-line{animation:return-light 1.6s ease both}
+@keyframes return-light{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.motion-paused .return-line{animation:none}
+/* Let geographic light shine through label hit targets instead of covering it with glyphs. */
+.human-star .star-anchor,.human-star:hover .star-anchor,.place-marker .star-anchor,
+.stage-orbit.has-memory .destination-star .star-anchor{color:transparent;text-shadow:none}
 
 .map-star[data-label-side=left] .marker-label{left:auto;right:41px}
 

@@ -1,13 +1,28 @@
 /** User-facing release history. Keep historical entries tied to their saved milestones. */
-export const currentVersion = '0.2.1';
+export const currentVersion = '0.3';
 
 export const releases = [
+  {
+    version: '0.3',
+    date: '2026-09-12',
+    dateLabel: '12 September 2026',
+    title: 'A light you remember',
+    milestone: 'This build',
+    changes: [
+      'Independent star rhythms, sharper occasional glints and a fuller glow make the Earth shimmer.',
+      'A new Star shimmer control adjusts the effect. Pausing motion keeps the light still.',
+      'The last life you visit stays with you after closing its story, gathering into a warm light on the way back to Earth.',
+      'The globe settles before the closing words appear. A journey without a visited life has its own neutral return.',
+      'Portrait returns allow more room for the remembered light; city point density responds to screen size.',
+    ],
+    review: 'Source, engine-lifecycle and projected-camera checks cover all three lives, fresh journeys and reduced motion. This release still needs an on-device visual review; earlier fallback screenshots describe v0.2.',
+  },
   {
     version: '0.2.1',
     date: '2026-09-12',
     dateLabel: '12 September 2026',
     title: 'A history to build on',
-    milestone: 'This build',
+    milestone: 'Previous release',
     changes: [
       'A visible version number opens this build history.',
       'Each milestone records its changes and review notes.',
