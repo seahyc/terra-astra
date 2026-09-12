@@ -1,6 +1,6 @@
 # Terra Astra — Earth, Constellated
 
-v0.3 — A light you remember, 12 September 2026.
+v0.4 — A world with depth, 12 September 2026.
 
 Release history and recovery: `CHANGELOG.md`, `lib/terra/releases.ts`, and `/history`. Proposed next feature build: `docs/NEXT-BUILD.md`.
 
@@ -18,10 +18,10 @@ v0.1 is preserved as saved Site version 1 (source d5e3ad98c03d8a5841e37b9bebe0bf
 ## Architecture
 `app/terra-experience.tsx` owns the interface and narrative state. The dynamically imported `lib/terra/engine.ts` owns geographic coordinates, camera flight, point clouds, uniforms, pointer controls, and resource disposal. `lib/terra/canvas-renderer.ts` projects the same scene at reduced detail without WebGL. `lib/terra/stories.ts` contains fictional story content, separate from geography.
 
-All coordinates use east-positive longitude and north-positive latitude. The Earth is a unit sphere; a closer near plane is selected as the camera approaches Singapore. Geographic particles have stable positions, with brightness, halo and diffraction shimmer; geography does not move. The hidden hemisphere is occluded. City files load on first descent. Rendering pauses when the tab is hidden, and device pixel ratio is capped.
+All coordinates use east-positive longitude and north-positive latitude. Earth coordinates use a unit reference sphere, with artistically exaggerated terrain radii at globe scale; a closer near plane is selected as the camera approaches Singapore. Geographic particles have stable positions, with brightness, halo and diffraction shimmer; geography does not move. The hidden hemisphere is occluded. City files load on first descent. Rendering pauses when the tab is hidden, and device pixel ratio is capped.
 
 ## Sources and reproducibility
-See `public/data/manifest.json` for source credits, sample counts and binary layout. All binary layers contain little-endian float32 values. Star rows are x/y/z/brightness/size/phase. Line rows are x/y/z in pairs.
+See `public/data/manifest.json` for source credits, sample counts and binary layout. Star and line layers contain little-endian float32 values; the v0.4 relief grid uses little-endian int16 metres. Star rows are x/y/z/brightness/size/phase. Line rows are x/y/z in pairs.
 
 Natural Earth geography is public domain. Night lights use NASA Earth Observatory's grayscale 2016 Black Marble composite, sampled artistically; they do not represent current illumination, individual people, or population counts. Singapore streets are OpenStreetMap data under ODbL, retrieved 9 September 2026. Three authored human stories are fictional.
 
@@ -30,7 +30,7 @@ Natural Earth geography is public domain. Night lights use NASA Earth Observator
 ## Current scope and limits
 - Detailed navigation covers central Singapore, not global street detail.
 - Global geography overlaps regional coastline detail during flight. Detailed streets still cover central Singapore only; the feathered edge is an artistic transition, not additional street coverage.
-- Terrain elevation, population estimates, real profiles and a live social network are future work.
+- Terrain and ocean-floor relief are now implemented at globe scale. Population estimates, real profiles and a live social network remain outside scope.
 - A star's brightness is artistic styling, never a person's worth.
 - Device-specific WebGL appearance and real iPhone performance require owner review.
 
@@ -63,3 +63,7 @@ TypeScript checking and the production build passed during implementation. All n
 - `node scripts/check-memory.mjs` drives the actual engine on an inert Canvas surface and deterministic clock. It verifies all three lives after panel close and panning, latest-life selection, neutral return, fresh-journey reset, single delayed arrival, reduced motion and disposal. It also bounds field brightness and sparse peaks (1.7% maximum bright-glint share in the sample at maximum shimmer). This does not render pixels or measure frame rate.
 - `node scripts/check-choreography.mjs` includes 482 actual-geography flight frames plus 1,446 projected memory-return frames for desktop and phone dimensions. It caught and drove the correction to portrait turn timing.
 - TypeScript and production build are release gates. No v0.3 browser screenshots, GPU pixel review or physical-phone performance measurement are claimed. The next review should use the owner's WebGL device and the same camera/light settings as the v0.2.1 baseline.
+
+
+## v0.4 spatial study
+See `docs/DEPTH-STUDY.md` for data provenance, three views, comparison behavior, particle budgets, review limits and the preserved v0.3 baseline. Real ETOPO terrain and bathymetry shape the outer light. Interpretive material extends into depth; Horizon and Cutaway make it inspectable. The reference toggle holds the camera fixed.

@@ -1,13 +1,28 @@
 /** User-facing release history. Keep historical entries tied to their saved milestones. */
-export const currentVersion = '0.3';
+export const currentVersion = '0.4';
 
 export const releases = [
+  {
+    version: '0.4',
+    date: '2026-09-12',
+    dateLabel: '12 September 2026',
+    title: 'A world with depth',
+    milestone: 'This build',
+    changes: [
+      'Real land elevation and ocean-floor relief shape the stars, with exaggerated height to reveal mountains, shelves and trenches.',
+      'Layers of stellar matter, soft light and quiet cavities give the world an interior.',
+      'Globe, Horizon and Cutaway offer three perspectives on the same Earth. Explore Indonesia and the Java Trench, or the Andes and Pacific.',
+      'The Surface reference holds the camera still while you compare the added depth. Pausing motion also holds the shimmer.',
+      'The Singapore journey and remembered-life return remain connected to this fuller Earth. Earlier releases are preserved.',
+    ],
+    review: 'Actual relief data and engine checks pass, including comparison, close zoom and all three lives. Paused desktop and phone-width views were reviewed using the Canvas fallback. Native WebGL appearance and physical-phone performance remain to be reviewed. Interior material is imagined.',
+  },
   {
     version: '0.3',
     date: '2026-09-12',
     dateLabel: '12 September 2026',
     title: 'A light you remember',
-    milestone: 'This build',
+    milestone: 'Previous release',
     changes: [
       'Independent star rhythms, sharper occasional glints and a fuller glow make the Earth shimmer.',
       'A new Star shimmer control adjusts the effect. Pausing motion keeps the light still.',
@@ -22,7 +37,7 @@ export const releases = [
     date: '2026-09-12',
     dateLabel: '12 September 2026',
     title: 'A history to build on',
-    milestone: 'Previous release',
+    milestone: 'Saved milestone',
     changes: [
       'A visible version number opens this build history.',
       'Each milestone records its changes and review notes.',

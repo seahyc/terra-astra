@@ -51,6 +51,22 @@ html{color-scheme:dark}.story-sheet,.about-dialog,.tuning-dialog{scrollbar-width
 .human-star .star-anchor,.human-star:hover .star-anchor,.place-marker .star-anchor,
 .stage-orbit.has-memory .destination-star .star-anchor{color:transparent;text-shadow:none}
 
+/* Three views share one Earth, with a direct reference to its former surface. */
+.depth-study{position:absolute;z-index:5;left:7vw;bottom:160px;width:290px;display:grid;gap:12px}
+.depth-views{width:100%;border-bottom:1px solid #819aab30;border-radius:0!important;padding-bottom:8px;gap:5px!important}
+.depth-views button{min-height:42px;flex:1;padding:8px 12px;border-radius:3px!important;font-size:14px;color:#92a9b9;background:transparent!important}
+.depth-views button[data-state=on]{color:#f0dfbf;background:#ccb78612!important}
+.depth-views button:hover{color:#f0dfbf}
+.depth-region [data-slot=select-trigger]{width:100%;height:40px;border-color:#819aab30;background:#061019b0;color:#b7cbd7;font-size:14px;box-shadow:none}
+.depth-region-menu{background:#09131c;border-color:#2b414e;color:#b7cbd7}
+.depth-region-menu [data-slot=select-item]{font-size:14px;min-height:40px}
+.depth-comparison{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:32px;color:#adbfcb;font-size:14px}
+.depth-note{font-size:12px;line-height:1.5;color:#8097a7;margin:0}
+.view-oblique .opening,.view-cutaway .opening{opacity:0;pointer-events:none}
+@media(min-width:1500px){.depth-study{left:9vw}}
+@media(max-height:800px) and (min-width:701px){.stage-orbit .opening{top:18vh}.stage-orbit .opening h1{font-size:58px;margin:17px 0}.depth-study{bottom:145px;gap:8px}}
+@media(max-width:700px){.depth-study{left:23px;bottom:145px;width:calc(100% - 100px);max-width:300px;gap:6px;padding:9px 12px;background:#030a11b8;border-radius:4px;backdrop-filter:blur(10px)}.depth-views{padding-bottom:2px;gap:0!important}.depth-views button{font-size:13px;padding:7px 10px;min-height:40px}.depth-region [data-slot=select-trigger]{font-size:13px;height:36px}.depth-comparison{font-size:13px;min-height:30px}.depth-note{font-size:12px}.stage-orbit .credits{font-size:11px}}
+
 .map-star[data-label-side=left] .marker-label{left:auto;right:41px}
 
 /* Release history is a quiet reading surface beside the star field. */

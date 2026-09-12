@@ -11,24 +11,36 @@ export class CanvasStarRenderer {
  constructor(){const ctx=this.domElement.getContext('2d',{alpha:false});if(!ctx)throw new Error('Canvas unavailable');this.ctx=ctx;}
  setPixelRatio(r:number){this.ratio=Math.min(r,1.3);this.setSize(this.width,this.height);}
  getPixelRatio(){return this.ratio;}
- setClearColor(hex:number,_alpha:number){this.clear='#'+hex.toString(16).padStart(6,'0');}
+ setClearColor(hex:number){this.clear='#'+hex.toString(16).padStart(6,'0');}
  setSize(w:number,h:number){this.width=w;this.height=h;this.domElement.width=Math.round(w*this.ratio);this.domElement.height=Math.round(h*this.ratio);this.domElement.style.width=w+'px';this.domElement.style.height=h+'px';}
  dispose(){this.sprites.clear();}
- private sprite(color:string){let s=this.sprites.get(color);if(s)return s;s=document.createElement('canvas');s.width=s.height=32;const c=s.getContext('2d')!;const g=c.createRadialGradient(16,16,0,16,16,16);g.addColorStop(0,'#ffffff');g.addColorStop(.08,color);g.addColorStop(.16,color+'cc');g.addColorStop(.35,color+'35');g.addColorStop(1,color+'00');c.fillStyle=g;c.fillRect(0,0,32,32);this.sprites.set(color,s);return s;}
+ private sprite(color:string,soft=false){const key=color+(soft?'soft':'star');let s=this.sprites.get(key);if(s)return s;s=document.createElement('canvas');s.width=s.height=32;const c=s.getContext('2d')!;const g=c.createRadialGradient(16,16,0,16,16,16);if(soft){g.addColorStop(0,color+'66');g.addColorStop(.3,color+'33');g.addColorStop(1,color+'00');}else{g.addColorStop(0,'#ffffff');g.addColorStop(.08,color);g.addColorStop(.16,color+'cc');g.addColorStop(.35,color+'35');g.addColorStop(1,color+'00');}c.fillStyle=g;c.fillRect(0,0,32,32);this.sprites.set(key,s);return s;}
  render(scene:THREE.Scene,camera:THREE.PerspectiveCamera){
  const ctx=this.ctx,w=this.width,h=this.height;ctx.setTransform(this.ratio,0,0,this.ratio,0,0);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';ctx.fillStyle=this.clear;ctx.fillRect(0,0,w,h);
- this.matrix.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);const m=this.matrix.elements,cp=camera.position;
+ this.matrix.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);const m=this.matrix.elements,cp=camera.position,view=camera.matrixWorldInverse.elements;
+ const core=scene.userData.coreRadius??1,spatial=scene.userData.spatial;
+ const visibility=(x:number,y:number,z:number,layer:boolean)=>{
+   const dx=x-cp.x,dy=y-cp.y,dz=z-cp.z,d=Math.hypot(dx,dy,dz),b=(cp.x*dx+cp.y*dy+cp.z*dz)/d;
+   const discriminant=b*b-cp.lengthSq()+core*core;
+   if(core>0&&discriminant>0){const hit=-b-Math.sqrt(discriminant);if(hit>0&&hit<d-.00001)return 0;}
+   if(!layer||!spatial)return 1;
+   const smooth=(n:number)=>{const t=Math.max(0,Math.min(1,(n+.008)/.016));return t*t*(3-2*t);};
+   const cut=smooth(x*spatial.cutNormal.x+y*spatial.cutNormal.y+z*spatial.cutNormal.z)*smooth(x*spatial.cutFacing.x+y*spatial.cutFacing.y+z*spatial.cutFacing.z);
+   const outer=b*b-cp.lengthSq()+1.12*1.12,entry=Math.max(0,-b-Math.sqrt(Math.max(0,outer)));
+   const attenuation=(1-spatial.cut*cut)*Math.exp(-Math.max(0,d-entry)*(2.9-spatial.cut*1.5));
+   return 1+(attenuation-1)*spatial.depth;
+ };
  const project=(x:number,y:number,z:number)=>{const q=m[3]*x+m[7]*y+m[11]*z+m[15];if(q<=0)return null;const px=(m[0]*x+m[4]*y+m[8]*z+m[12])/q,py=(m[1]*x+m[5]*y+m[9]*z+m[13])/q;if(px< -1.2||px>1.2||py< -1.2||py>1.2)return null;return [(px*.5+.5)*w,(-py*.5+.5)*h];};
- const drawPoints=(o:THREE.Points,background=false)=>{if(!o.visible)return;const mat=o.material as THREE.ShaderMaterial,u=mat.uniforms;if(!u?.opacity||u.opacity.value<.003)return;const a=o.geometry.getAttribute('position'),b=o.geometry.getAttribute('brightness'),sz=o.geometry.getAttribute('starSize'),ph=o.geometry.getAttribute('phase'),revealAt=o.geometry.getAttribute('revealAt');if(!a||!b||!sz)return;const tint='#'+(u.tint.value as THREE.Color).getHexString(),sprite=this.sprite(tint);const count=Math.min(a.count,o.geometry.drawRange.count);const step=Math.max(1,Math.ceil(a.count/(background?350:o.userData.fallbackExposure?12000:5000)));ctx.globalCompositeOperation='lighter';
- for(let i=0;i<count;i+=step){const x=a.getX(i),y=a.getY(i),z=a.getZ(i);if(!background&&x*cp.x+y*cp.y+z*cp.z<x*x+y*y+z*z)continue;const p=project(x,y,z);if(!p)continue;const light=scintillation(u.time.value,ph.getX(i),!!u.motion.value,u.sparkle.value,u.signature.value);const size=sz.getX(i)*u.zoomFactor.value*u.sizeScale.value*(2.8+u.glow.value*.7)*light.size;const t=Math.max(0,Math.min(1,(u.reveal.value-revealAt.getX(i))/.18)),reveal=t*t*(3-2*t);ctx.globalAlpha=Math.min(1,b.getX(i)*u.opacity.value*light.brightness*.95*reveal*(o.userData.fallbackExposure||1));ctx.drawImage(sprite,p[0]-size/2,p[1]-size/2,size,size);
+ const drawPoints=(o:THREE.Points,background=false)=>{if(!o.visible)return;const mat=o.material as THREE.ShaderMaterial,u=mat.uniforms;if(!u?.opacity||u.opacity.value<.003)return;const a=o.geometry.getAttribute('position'),b=o.geometry.getAttribute('brightness'),sz=o.geometry.getAttribute('starSize'),ph=o.geometry.getAttribute('phase'),revealAt=o.geometry.getAttribute('revealAt');if(!a||!b||!sz)return;const tint='#'+(u.tint.value as THREE.Color).getHexString(),sprite=this.sprite(tint,!!u.soft?.value);const count=Math.min(a.count,o.geometry.drawRange.count);const step=Math.max(1,Math.ceil(a.count/(background?350:o.userData.sampleBudget??(o.userData.fallbackExposure?12000:5000))));ctx.globalCompositeOperation='lighter';
+ for(let i=0;i<count;i+=step){let x=a.getX(i),y=a.getY(i),z=a.getZ(i);if(o.userData.spatial){const r=Math.hypot(x,y,z),scale=(1.00002+(r-1.00002)*u.depthMix.value)/r;x*=scale;y*=scale;z*=scale;}const p=project(x,y,z);if(!p)continue;const visible=background?1:visibility(x,y,z,!!o.userData.spatial);if(visible<.003)continue;const light=scintillation(u.time.value,ph.getX(i),!!u.motion.value,u.sparkle.value,u.signature.value);const perspective=o.userData.spatial?1+(Math.max(.55,Math.min(2.6,cp.length()/Math.max(.01,-(view[2]*x+view[6]*y+view[10]*z+view[14]))))-1)*u.depthMix.value:1;const size=sz.getX(i)*u.zoomFactor.value*u.sizeScale.value*(2.8+u.glow.value*.7)*light.size*perspective;const t=Math.max(0,Math.min(1,(u.reveal.value-revealAt.getX(i))/.18)),reveal=t*t*(3-2*t);ctx.globalAlpha=Math.min(1,b.getX(i)*u.opacity.value*light.brightness*.95*reveal*visible*(o.userData.fallbackExposure||o.userData.spatialExposure||1));ctx.drawImage(sprite,p[0]-size/2,p[1]-size/2,size,size);
  // A few short diffraction rays give glints definition without brightening the whole map.
- if(light.glint>.12&&size>3){ctx.globalAlpha*=Math.min(.55,light.glint*.55);ctx.strokeStyle=tint;ctx.lineWidth=.55;const arm=size*(.32+light.glint*.12);ctx.beginPath();ctx.moveTo(p[0]-arm,p[1]);ctx.lineTo(p[0]+arm,p[1]);ctx.moveTo(p[0],p[1]-arm);ctx.lineTo(p[0],p[1]+arm);ctx.stroke();}}
+ if(!u.soft?.value&&light.glint>.12&&size>3){ctx.globalAlpha*=Math.min(.55,light.glint*.55);ctx.strokeStyle=tint;ctx.lineWidth=.55;const arm=size*(.32+light.glint*.12);ctx.beginPath();ctx.moveTo(p[0]-arm,p[1]);ctx.lineTo(p[0]+arm,p[1]);ctx.moveTo(p[0],p[1]-arm);ctx.lineTo(p[0],p[1]+arm);ctx.stroke();}}
 
  ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';};
  for(const o of scene.children)if(o instanceof THREE.Points)drawPoints(o,true);
  // Occlude distant stars with the actual projected silhouette of the globe.
- const d=cp.length(),f=h/(2*Math.tan(camera.fov*Math.PI/360)),radius=f/Math.sqrt(d*d-1),center=new THREE.Vector3().project(camera);const cx=(center.x*.5+.5)*w,cy=(-center.y*.5+.5)*h;
- ctx.fillStyle='#020609';if(radius>w*5){ctx.fillRect(0,0,w,h);}else{ctx.beginPath();ctx.arc(cx,cy,radius,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#46667524';ctx.lineWidth=.8;ctx.stroke();}
+ const d=cp.length(),f=h/(2*Math.tan(camera.fov*Math.PI/360)),radius=core?f*core/Math.sqrt(d*d-core*core):0,center=new THREE.Vector3().project(camera);const cx=(center.x*.5+.5)*w,cy=(-center.y*.5+.5)*h;
+ ctx.fillStyle='#020609';if(core>0){if(radius>w*5){ctx.fillRect(0,0,w,h);}else{ctx.beginPath();ctx.arc(cx,cy,radius,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#46667524';ctx.lineWidth=.8;ctx.stroke();}}
  scene.traverse(o=>{
    if(!(o instanceof THREE.LineSegments)||!o.visible)return;
    const mat=o.material as THREE.LineBasicMaterial;if(mat.opacity<.003)return;

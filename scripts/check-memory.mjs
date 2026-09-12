@@ -30,16 +30,48 @@ globalThis.cancelAnimationFrame = () => { frame = null; };
 Object.defineProperty(globalThis, 'performance', { value: { now: () => clock } });
 globalThis.fetch = async path => new Response(await readFile(new URL('../public' + path, import.meta.url)));
 const host = { clientWidth: 1363, clientHeight: 936, dataset: {}, appendChild: noop, addEventListener: noop, removeEventListener: noop };
-const stages = [], arrivals = [];
+const stages = [], arrivals = [], views = [];
+let rendered = null;
+const { CanvasStarRenderer } = await import('../lib/terra/canvas-renderer.ts');
+// Pixel review is done separately in the preview browser. Capture the real engine's
+// scene and camera here without spending the lifecycle test drawing inert sprites.
+CanvasStarRenderer.prototype.render = (scene, camera) => { rendered = { scene, camera }; };
 const { createEarth } = await import('../lib/terra/engine.ts');
 const engine = await createEarth(host, { querySelector: () => null }, {
   ready: noop, coordinates: noop, interact: noop,
-  stage: s => stages.push(s), arrival: id => arrivals.push(id), error: message => assert.fail(message),
+  stage: s => stages.push(s), arrival: id => arrivals.push(id), view: mode => views.push(mode), error: message => assert.fail(message),
 }, new AbortController().signal);
-const options = { glow: 1.15, shimmer: 1.1, threads: .55, density: .85, borders: false, motion: false };
+const options = { glow: 1.15, shimmer: 1.1, depth: true, threads: .55, density: .85, borders: false, motion: false };
 const tick = (ms = 60) => { clock += ms; const next = frame; frame = null; assert.ok(next, 'Engine should schedule a frame'); next(clock); };
 engine.configure(options);
+for (const region of ['indonesia', 'andes']) {
+  engine.region(region);
+  for (const view of ['globe', 'oblique', 'cutaway']) {
+    engine.view(view);tick();
+    assert.equal(views.at(-1), view);
+    assert.equal(rendered.scene.userData.spatial.depth, 1);
+    assert.equal(rendered.scene.userData.coreRadius, view === 'cutaway' ? 0 : .7);
+    const pose = rendered.camera.matrixWorld.toArray();
+    engine.configure({ ...options, depth: false });tick();
+    assert.equal(rendered.scene.userData.spatial.depth, 0);
+    assert.equal(rendered.scene.userData.spatial.cut, 0);
+    assert.equal(rendered.scene.userData.coreRadius, 1);
+    assert.deepEqual(rendered.camera.matrixWorld.toArray(), pose, 'Reference comparison must keep the camera fixed');
+    engine.configure(options);tick();
+    if (view === 'oblique') {
+      const before = rendered.camera.position.length();
+      engine.zoom(.8);tick();
+      assert.ok(rendered.camera.position.length() < before, 'Horizon zoom-in must approach instead of jumping out');
+      for (let i = 0; i < 10; i++) { engine.zoom(.5);tick(); }
+      assert.ok(rendered.camera.position.length() > 1.10, 'The close camera must stay outside exaggerated mountains');
+    }
+  }
+}
+engine.view('oblique');tick();
 await engine.descend();tick();assert.equal(stages.at(-1), 'city');
+assert.equal(views.at(-1), 'globe', 'Descent must reset the study camera');
+assert.equal(rendered.scene.userData.spatial.depth, 0, 'Spatial matter must fade out before street detail');
+assert.equal(rendered.scene.userData.spatial.cut, 0, 'Cutaway must not remain in the city');
 engine.orbit();tick();assert.equal(arrivals.at(-1), null, 'Unvisited journey must have a neutral ending');
 
 for (const story of stories) {
@@ -87,4 +119,4 @@ for (let spread = 0; spread < 500; spread++) {
 assert.ok(memoryLight(0, 8, true).glimmer > .3, 'Keep a visible residual light after settling');
 assert.deepEqual(memoryLight(0, 8, false), memoryLight(0, 8, true));
 assert.ok(cityScreenBudget(390, 844) < cityScreenBudget(1363, 936));
-console.log(`PASS: neutral return, all three lives after close/pan, delayed single arrival, switching, fresh journey, reduced motion, disposal, and bounded shimmer (${(peakFraction * 100).toFixed(1)}% peak glints). Canvas is inert; no pixel review claimed.`);
+console.log(`PASS: three spatial views across both regions, fixed-camera reference, safe horizon zoom, city reset, neutral return, all three lives after close/pan, delayed single arrival, switching, fresh journey, reduced motion, disposal, and bounded shimmer (${(peakFraction * 100).toFixed(1)}% peak glints). Canvas is inert; no pixel review claimed.`);

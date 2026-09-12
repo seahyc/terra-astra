@@ -1,0 +1,72 @@
+{
+  "schema": 1,
+  "source": "NOAA NCEI ETOPO 2022, Ice Surface, 60 arc-second source; bilinear globe-scale sample",
+  "sourceUrl": "https://www.ncei.noaa.gov/products/etopo-global-relief-model",
+  "sourceDOI": "https://doi.org/10.25921/fd45-gt74",
+  "exportEndpoint": "https://gis.ngdc.noaa.gov/arcgis/rest/services/DEM_mosaics/DEM_all/ImageServer/exportImage",
+  "exportParameters": {
+    "bbox": "-180,-90,180,90",
+    "bboxSR": 4326,
+    "size": "2880,1440",
+    "imageSR": 4326,
+    "format": "tiff",
+    "pixelType": "F32",
+    "interpolation": "RSP_BilinearInterpolation",
+    "compression": "LZ77",
+    "renderingRule": "{\"rasterFunction\": \"none\"}",
+    "mosaicRule": "{\"where\": \"Name='ETOPO_2022_v1_60s_surface'\"}",
+    "adjustAspectRatio": "false",
+    "f": "image"
+  },
+  "sourceSha256": "7266b53445435a6f1d4b20da19e815b27670ce3d4e4d9652d55b017abc4121ac",
+  "grid": {
+    "width": 1440,
+    "height": 720,
+    "type": "int16-le",
+    "units": "metres",
+    "bounds": [
+      -180,
+      -90,
+      180,
+      90
+    ],
+    "pixelCenters": true,
+    "rowOrder": "north-to-south",
+    "min": -9657,
+    "max": 6154
+  },
+  "seed": 260913,
+  "layers": {
+    "relief-land": {
+      "count": 60833,
+      "stride": 6,
+      "bytes": 1459992
+    },
+    "relief-ocean": {
+      "count": 149167,
+      "stride": 6,
+      "bytes": 3580008
+    },
+    "stellar-body": {
+      "count": 57750,
+      "stride": 6,
+      "bytes": 1386000
+    },
+    "stellar-interior": {
+      "count": 16457,
+      "stride": 6,
+      "bytes": 394968
+    },
+    "stellar-haze": {
+      "count": 7164,
+      "stride": 6,
+      "bytes": 171936
+    },
+    "stellar-halo": {
+      "count": 4800,
+      "stride": 6,
+      "bytes": 115200
+    }
+  },
+  "interpretation": "Terrain is exaggerated. Stellar body, interior and halo are artistic material, not Earth interior measurements or people."
+}
