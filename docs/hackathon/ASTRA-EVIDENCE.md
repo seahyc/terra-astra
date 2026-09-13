@@ -47,3 +47,17 @@ Official model identifier `gpt-6-astra` verified at https://developers.openai.co
 ## Scope revision — planning only
 
 At approximately 11:21 SGT, read revised HANDOFF.md, CURRENT_STATE.md and HACKATHON_PLAN.md. Replaced Ask Astra-led planning with a proposed reversible Terra ↔ Astra transformation and separate personal three-place constellation. Preserved completed v0.4.1 work. This revision changes documentation only; production is explicitly frozen. No new feature implementation is claimed.
+
+## Living-universe implementation — current authorized sprint
+
+The user explicitly requested: “If collaboration/subagent tools are available, aggressively delegate independent work that can safely happen in parallel.” The original request also required investigation before edits and preservation of the pre-hackathon baseline.
+
+- Lead inspected the current source and native WebGL baseline before edits. A read-only agent audited remaining configuration, data, starter components and baseline checks.
+- Lead preserved v0.4 with the pushed annotated `pre-hackathon` tag, created separate integration, world-depth and personal-constellation worktrees, and committed the typed boundary at `e89ab92`.
+- World agent returned reversible GPU/Canvas morph, global personal framing and rendering at `2cda1bd`. Integration review rejected a fixed triangle shared by all visitors. Follow-up `ec3551d` derives personal geometry from the chosen places' angular distances.
+- Personal agent returned form, 48 sourced places, canonical validation and checks at `47c0212`. The lead integrated both tracks without overlapping source ownership.
+- Independent QA reproduced a bug: entering Singapore cleared the renderer's personal constellation while the UI kept its three places. Lead fixed it and added a regression at `4bc995f`.
+- Native browser review exposed phone label/text crowding. The same integration fix separated the Astra stars and closing Earth from their panels. A browser round trip confirmed the preserved three-place constellation still renders after visiting Singapore.
+- Focused checks and native WebGL verification are recorded in the new release. A fresh screenshot reviewer evaluates desktop and phone compositions independently.
+
+These are actual Codex engineering actions and Git commits. There is no live Astra model call in the app, no claim of newly generating the pre-existing geographic dataset, and no physical-phone FPS claim.

@@ -1,13 +1,28 @@
 /** User-facing release history. Keep historical entries tied to their saved milestones. */
-export const currentVersion = '0.4.1';
+export const currentVersion = '0.5';
 
 export const releases = [
+  {
+    version: '0.5',
+    date: '2026-09-13',
+    dateLabel: '13 September 2026',
+    title: 'A universe within',
+    milestone: 'This build',
+    changes: [
+      'Open the geographic Earth into a layered stellar spiral, then reform the same particles into their original Earth.',
+      'Choose three meaningful places from a sourced 48-place catalogue. Their geographic distances shape a constellation of your own.',
+      'Return to Earth with your three warm stars and their connections still present: The constellation was us all along.',
+      'Personal constellations survive the Singapore journey. Draft reset, change places, clear and full restart have separate meanings.',
+      'Both WebGL and the reduced-detail Canvas renderer share the reversible transformation.',
+    ],
+    review: 'Native WebGL reviewed at desktop and phone widths: opening, three-place entry, warm constellation, closing return, draft reset and a Singapore round trip. Source checks cover immutable home positions, dateline and antipodal cases, repeated reversal and reduced motion. Physical-phone performance remains unverified. Astra coordinated isolated engineering tracks in Codex; no runtime inference is required. The v0.4 prototype and prepared geography predate the hackathon.',
+  },
   {
     version: '0.4.1',
     date: '2026-09-13',
     dateLabel: '13 September 2026',
     title: 'A journey you can return to',
-    milestone: 'This build',
+    milestone: 'Previous release',
     changes: [
       'Restart journey returns to the opening Earth with fresh camera, light and story settings.',
       'The home globe fits the desktop composition and adjusts when the window changes size.',

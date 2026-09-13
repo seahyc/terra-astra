@@ -2,6 +2,15 @@
 
 Semantic versions label the experience; Sites version numbers identify saved deployment packages. They are separate counters. `lib/terra/releases.ts` is the source for the public history page and current build badge. Git tags identify exact source snapshots; native Sites records are authoritative for save/deploy status.
 
+## v0.5 — 2026-09-13 — A universe within
+- Opens the existing geographic particles into a deterministic volumetric stellar spiral and reforms exact original positions. GPU and sampled Canvas share the transformation math; camera actions are serialized during transitions.
+- Adds a keyboard-accessible three-place form and a 48-place sourced local catalogue. No geocoding service, credentials, persistence, or runtime model call is needed.
+- Personal geometry derives from the three geographic distances, with bounded regularization for close or collinear places. Real geographic anchors and geodesic threads remain visible on the closing Earth.
+- Retains personal memory through the separate Singapore journey. Draft reset preserves submitted stars; explicit clear removes them; Restart journey clears session state.
+- Improves phone framing so the personal stars, form and closing text occupy separate areas. Preserves the existing visual identity and historical releases.
+- Validation: TypeScript; sourced model boundary; 2,000 reversible particle paths and real-engine lifecycle; existing 482 geography / 1,446 remembered-return camera samples; depth and memory checks. Native WebGL reviewed at 1280×720 and 390×844 with no console warnings/errors in the tested route. Observed rolling render diagnostics near 120fps on the Mac browser; not a physical-phone measurement or universal guarantee.
+- Preserves pre-existing v0.4 at `pre-hackathon` and `v0.4`, and today's v0.4.1. Astra's role was source investigation, parallel implementation, integration and verification in Codex.
+
 ## v0.4.1 — 2026-09-13 — A journey you can return to
 - Restores the existing v0.4 history into a portable Mac checkout and private shared GitHub repository; no data regeneration or renderer replacement.
 - Adds a complete Restart journey action using page reload, clearing camera, tuning, region, selected/remembered life and in-flight work.
