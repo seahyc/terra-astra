@@ -78,14 +78,15 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
     return () => onAskReady?.(null);
   }, [ask, onAskReady]);
 
-  const connected = !['off', 'stopped', 'error', 'startup timed out', 'disconnected'].includes(status) && !status.startsWith('closed');
+  const connected = !['off', 'stopped', 'error', 'startup timed out', 'disconnected'].includes(status) && !status.startsWith('closed') && !status.startsWith('disconnected');
+  const statusLabel = status.startsWith('closed') || ['off', 'stopped'].includes(status) ? 'Voice off' : status === 'started' ? 'Listening' : status;
   return <aside className={styles.dock} aria-label="Astra navigation">
     <div className={styles.heading}>
       <button type="button" aria-expanded={open} onClick={() => setOpen(!open)}>Ask Astra <span>{open ? '−' : '+'}</span></button>
       <button type="button" disabled={!ready} onClick={() => { setOpen(true); setError(''); if (connected) live.current?.stop(); else void live.current?.start(); }} aria-label={connected ? 'Stop Live voice' : 'Start Live voice'}>{connected ? 'Stop voice' : 'Talk'}</button>
     </div>
     {open && <div className={styles.body}>
-      <p className={styles.status}>Live · {status}</p>
+      <p className={styles.status}>Live · {statusLabel}</p>
       <QuestionBar onQuestion={(text) => ask(text)} disabled={!ready} busy={busy} onCancel={() => { active.current?.abort(); active.current = null; setBusy(false); }} />
       {answer && <p className={styles.answer} aria-live="polite">{answer}</p>}
       {error && <p className={styles.error} role="alert">{error}{/sign.?in|signed in/i.test(error) && <> <a href="/signin-with-chatgpt?return_to=%2F">Sign in with ChatGPT</a></>}</p>}

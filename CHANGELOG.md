@@ -2,6 +2,12 @@
 
 Semantic versions label the experience; Sites version numbers identify saved deployment packages. They are separate counters. `lib/terra/releases.ts` is the source for the public history page and current build badge. Git tags identify exact source snapshots; native Sites records are authoritative for save/deploy status.
 
+## v0.8.1 — 2026-09-13 — Ready for the journey
+- Stop ends microphone tracks immediately; the data channel remains briefly available for final usage. A new regression verifies no false ended-track error and successful late usage delivery.
+- Disconnected sessions return to a usable Talk button; the visible status omits raw usage JSON.
+- Gently raises existing SG/NY continuation luminance (4.4→5.5; filament cap .18→.20), with no geometry, camera, layer population or destination changes.
+- Public v0.8 verified an actual spoken Palm request through GPT-Live-1 → WorldCommand → visible arrival, then session close. This patch retains that path; final public smoke evidence follows deployment.
+
 ## v0.8 — 2026-09-13 — Different places, different motion
 - Selectively adapts YC f3ea241 Live transport and hosted session/answer endpoints, preserving existing renderer and command payloads. Typed catalogue requests acknowledge, move immediately, then explain. Existing authentication remains; server OPENAI_API_KEY is required. No models, database, new renderer, arbitrary-coordinate API or extra datasets from YC’s branch are included. Server secret configured at14:36; native microphone/audio verification follows deployment.
 - Selectively adapts the Palm Jumeirah and Makkah spike from 4023b278d664f5d827d188413f1e7c71376b20dc onto current v0.7.1. No wholesale stale-branch merge.

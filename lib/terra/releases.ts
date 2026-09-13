@@ -1,13 +1,26 @@
 /** User-facing release history. Keep historical entries tied to their saved milestones. */
-export const currentVersion = '0.8';
+export const currentVersion = '0.8.1';
 
 export const releases = [
+  {
+    version: '0.8.1',
+    date: '2026-09-13',
+    dateLabel: '13 September 2026',
+    title: 'Ready for the journey',
+    milestone: 'This build',
+    changes: [
+      'Stopping Live releases the microphone immediately while the session finishes closing. A disconnected session can restart from Talk.',
+      'Singapore and New York surroundings receive a small luminance adjustment to soften the change from their detailed cores.',
+      'The same Genesis, five destinations, living shells and WorldCommand interface remain in place.',
+    ],
+    review: 'GPT-Live-1 voice requires ChatGPT sign-in and microphone permission. The public v0.8 session successfully transcribed a spoken Palm Jumeirah request, moved the world and closed. This patch adds immediate microphone release and retains final session usage handling. Activity remains illustrative; physical-phone testing remains unverified.',
+  },
   {
     version: '0.8',
     date: '2026-09-13',
     dateLabel: '13 September 2026',
     title: 'Different places, different motion',
-    milestone: 'This build',
+    milestone: 'Previous release',
     changes: [
       'Palm Jumeirah adds its mapped trunk, fronds and crescent, surrounding Dubai coast, and warm activity along curated local roads.',
       'Makkah adds Masjid al-Haram context and a source-derived Kaaba anchor. Soft collective movement circulates counter-clockwise, with a persistent interpretive-flow disclosure.',
