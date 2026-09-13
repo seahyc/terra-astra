@@ -7,8 +7,9 @@ import styles from './globe-voice.module.css';
 import QuestionBar from '../terra-input/QuestionBar';
 import { readAnswerStream } from './answer-stream';
 import { worldAnswerSchema, type WorldAnswer, type WorldTarget as GeneratedWorldTarget } from '../../lib/terra/world-answer';
-import { getWorldState, subscribeWorldState } from '../../lib/world/bridge';
+import { getWorldState, sendWorldCommand, subscribeWorldState } from '../../lib/world/bridge';
 import { WORLD_TARGETS, type WorldCommand, type WorldState, type WorldTarget as CatalogueWorldTarget } from '../../lib/world/commands';
+import { classifyTelemetryError, downloadTelemetryReport, navigationTurnOutcome, telemetry, type TelemetryErrorKind } from '../../lib/terra/telemetry';
 import { catalogueTargetIdInQuestion, executeLiveNavigation, planLiveNavigation } from './world-navigator';
 import { suggestedPerspective } from './world-navigator';
 import AnswerImage from './AnswerImage';
@@ -33,6 +34,19 @@ function answerWithLinks(text: string) {
   });
 }
 
+function telemetryWorldState(state: WorldState | null) {
+  const catalogue = state?.targetId ? WORLD_TARGETS.some(target => target.id === state.targetId) : false;
+  return state ? { tier: state.tier, perspective: state.perspective, busy: state.busy, target_kind: catalogue ? 'catalogue' as const : state.location ? 'dynamic' as const : 'none' as const } : {};
+}
+
+function voiceTelemetryStatus(status: string) {
+  if (status.startsWith('closed')) return 'closed';
+  if (status.startsWith('disconnected')) return 'disconnected';
+  if (status.startsWith('session limit reached') || status === 'finalizing') return 'finalizing';
+  if (status === 'startup timed out') return 'startup_timeout';
+  return status.replaceAll(' ', '_');
+}
+
 export default function GlobeVoice({ ready, onAskReady }: Props) {
   const [voiceStatus, setVoiceStatus] = useState('off');
   const [needsSignIn, setNeedsSignIn] = useState(false);
@@ -52,7 +66,9 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
   const [transcriptBaseline, setTranscriptBaseline] = useState({ userIndex: -1, userText: '' });
   const live = useRef<ReturnType<typeof createLiveController> | null>(null);
   const active = useRef<AbortController | null>(null), revision = useRef(0);
+  const activeTurnRef = useRef<string | null>(null);
   const imageAbortRef = useRef<AbortController | null>(null);
+  const imageTelemetryRef = useRef<{ turnId: string; started: number } | null>(null);
   const dockRef = useRef<HTMLElement | null>(null);
   const askRef = useRef<(question: string, delegationId?: string) => void>(() => {});
   const emphasize = useCallback((text: string) => {
@@ -61,33 +77,55 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
   }, []);
   const ask = useCallback(async (question: string, delegationId?: string) => {
     if (!ready || !question.trim()) return;
+    if (active.current && activeTurnRef.current) telemetry.record('turn.cancelled', { reason: 'superseded' }, activeTurnRef.current);
+    if (imageAbortRef.current && imageTelemetryRef.current) telemetry.record('image.lifecycle', { phase: 'cancelled', duration_ms: performance.now() - imageTelemetryRef.current.started }, imageTelemetryRef.current.turnId);
     const id = ++revision.current;
     active.current?.abort();
     imageAbortRef.current?.abort(); imageAbortRef.current = null;
+    imageTelemetryRef.current = null;
+    const turnId = telemetry.beginTurn(delegationId ? 'voice' : 'typed', question.trim().length);
+    activeTurnRef.current = turnId;
     const controller = new AbortController(); active.current = controller;
     const lastUserIndex = rows.findLastIndex(row => row.who === 'user');
     setTranscriptBaseline({ userIndex: lastUserIndex, userText: lastUserIndex >= 0 ? rows[lastUserIndex].text.trim() : '' });
     setError(''); setAnswer(''); setOpening(''); setSpokenCaption(''); setBusy(true); setQuestionText(question); setWorld(null); setSources([]); setAnswerImage(null);
     const selectedIds: string[] = [];
+    let turnOutcome: 'completed' | 'navigation_only' | 'error' = 'completed';
+    let caughtErrorKind: TelemetryErrorKind | undefined;
+    let lastHttpStatus: number | undefined;
+    const navigationFailed = () => { turnOutcome = navigationTurnOutcome(false); telemetry.record('turn.error', { error_kind: 'navigation' }, turnId); };
+    const navigate = async (plan: Parameters<typeof executeLiveNavigation>[0], onDispatch?: () => void) => {
+      let commandIndex = 0;
+      return executeLiveNavigation(plan, { signal: controller.signal, onDispatch, send: async command => {
+        const index = commandIndex++, started = performance.now();
+        try {
+          const result = await sendWorldCommand(command);
+          telemetry.record('navigation.command', { command_type: command.type, index, ok: result.ok, duration_ms: performance.now() - started, ...telemetryWorldState(getWorldState()) }, turnId);
+          return result;
+        } catch (navigationError) {
+          caughtErrorKind = 'navigation';
+          telemetry.record('navigation.command', { command_type: command.type, index, ok: false, duration_ms: performance.now() - started, ...telemetryWorldState(getWorldState()) }, turnId);
+          throw navigationError;
+        }
+      } });
+    };
     try {
       const navigationPlan = navigationState ? planLiveNavigation(question) : null;
       if (navigationPlan) {
         setProgress('Moving through the world…');
         let acknowledged = false;
-        const navigation = executeLiveNavigation(navigationPlan, {
-          signal: controller.signal,
-          onDispatch: () => {
+        const navigation = navigate(navigationPlan, () => {
             if (acknowledged || id !== revision.current || controller.signal.aborted) return;
             acknowledged = true;
             setOpening(navigationPlan.acknowledgement);
             live.current?.say(delegationId ?? null, navigationPlan.acknowledgement);
-          },
-        });
+          });
         const result = await navigation;
         if (id !== revision.current || controller.signal.aborted) return;
-        if (!result.ok) throw new Error(result.reason ?? 'The world could not complete that journey.');
+        if (!result.ok) { caughtErrorKind = 'navigation'; throw new Error(result.reason ?? 'The world could not complete that journey.'); }
         setAnswer(navigationPlan.context); setProgress('');
         live.current?.say(delegationId ?? null, navigationPlan.context);
+        turnOutcome = 'navigation_only';
         return;
       }
       setProgress('Thinking…');
@@ -95,37 +133,49 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
       const initialPerspective = navigationState ? suggestedPerspective(question) : null;
       const queryTarget = queryTargetId ? WORLD_TARGETS.find(item => item.id === queryTargetId) ?? null : null;
       const initialJourney = queryTarget
-        ? executeLiveNavigation({ commands: [{ type: 'flyTo', targetId: queryTarget.id }], acknowledgement: '', context: '' }, { signal: controller.signal })
+        ? navigate({ commands: [{ type: 'flyTo', targetId: queryTarget.id }], acknowledgement: '', context: '' })
         : null;
       const initialPerspectiveJourney = initialPerspective && navigationState?.perspective !== initialPerspective
         ? (async () => {
             const journey = initialJourney ? await initialJourney : null;
             if (journey && !journey.ok) return journey;
-            return executeLiveNavigation({ commands: [{ type: 'setPerspective', perspective: initialPerspective }], acknowledgement: '', context: '' }, { signal: controller.signal });
+            return navigate({ commands: [{ type: 'setPerspective', perspective: initialPerspective }], acknowledgement: '', context: '' });
           })()
         : null;
       live.current?.context(`User question: ${question}. Wait for the backend answer and answer only from what it returns.`);
       let response: Response | undefined;
       for (let attempt = 0; attempt < 12; attempt++) {
         controller.signal.throwIfAborted();
+        const requestStarted = performance.now();
         response = await fetch('/api/terra/answer', { method: 'POST', headers: {'Content-Type':'application/json','Accept':'application/x-ndjson'}, body: JSON.stringify({query:question, selectedIds, previous:world, previousQuestion:questionText}), signal:controller.signal });
+        lastHttpStatus = response.status;
+        const contentType = response.headers.get('content-type') ?? '';
+        telemetry.record('answer.http', { attempt, status: response.status, duration_ms: performance.now() - requestStarted, content_type: contentType.includes('application/x-ndjson') ? 'ndjson' : contentType.includes('json') ? 'json' : 'other' }, turnId);
         if (response.status !== 409) break;
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
-      const result = z.object({error:z.string().optional(), world:worldAnswerSchema.nullable().optional(), sources:z.array(z.object({url:z.string().url().regex(/^https?:\/\//),title:z.string().max(200)})).max(12).optional(), measured:z.object({output:z.string()}).optional()}).parse(await readAnswerStream(response!, (text, complete) => {
+      const answerStarted = performance.now();
+      let openingSeen = false;
+      const result = z.object({error:z.string().optional(), world:worldAnswerSchema.nullable().optional(), sources:z.array(z.object({url:z.string().url().regex(/^https?:\/\//),title:z.string().max(200)})).max(12).optional(), measured:z.object({output:z.string(),model:z.enum(['gpt-5.6-luna','gpt-5.6-terra','gpt-6-astra']).optional(),route:z.enum(['quick','standard','research']).optional(),subagent_count:z.number().int().nonnegative().optional(),elapsed_ms:z.number().nonnegative().optional()}).optional()}).parse(await readAnswerStream(response!, (text, complete) => {
         if (id !== revision.current || controller.signal.aborted) return;
+        if (!openingSeen) { openingSeen = true; telemetry.record('answer.opening', { phase: 'first', duration_ms: performance.now() - answerStarted }, turnId); }
+        if (complete) telemetry.record('answer.opening', { phase: 'complete', duration_ms: performance.now() - answerStarted }, turnId);
         setOpening(text);
         if(complete) live.current?.say(delegationId??null, text);
       }));
       if (!response!.ok) throw new Error(result.error || 'The explanation could not be completed.');
       if (id !== revision.current || controller.signal.aborted) return;
       if (!result.measured) throw new Error('The explanation was empty. Please try again.');
+      telemetry.record('answer.result', { model: result.measured.model, route: result.measured.route, subagent_count: result.measured.subagent_count, server_elapsed_ms: result.measured.elapsed_ms, duration_ms: performance.now() - answerStarted }, turnId);
       const explanation = result.measured.output.replace(/\*\*|^[-#]\s/gm,'').replace(/cite[^]+/g, '');
       setAnswer(explanation); setSources(result.sources ?? []); setProgress('');
       if (result.world?.imageBrief) {
         const brief = result.world.imageBrief;
         const imageController = new AbortController();
         imageAbortRef.current = imageController;
+        const imageStarted = performance.now();
+        imageTelemetryRef.current = { turnId, started: imageStarted };
+        telemetry.record('image.lifecycle', { phase: 'requested' }, turnId);
         setAnswerImage({ title: brief.title, loading: true });
         void fetch('/api/terra/image', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({query:question, brief}), signal:imageController.signal })
           .then(async response => {
@@ -137,17 +187,23 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
               model: z.string().max(100).optional(),
               cached: z.boolean().optional(),
             }).strict().parse(payload);
-            if (id === revision.current && !imageController.signal.aborted) setAnswerImage({ title: brief.title, imageUrl: parsed.imageUrl, loading: false });
+            if (id === revision.current && !imageController.signal.aborted) {
+              telemetry.record('image.lifecycle', { phase: 'ready', status: response.status, duration_ms: performance.now() - imageStarted, model: parsed.model, cached: parsed.cached }, turnId);
+              setAnswerImage({ title: brief.title, imageUrl: parsed.imageUrl, loading: false });
+            } else telemetry.record('image.lifecycle', { phase: 'stale', status: response.status, duration_ms: performance.now() - imageStarted }, turnId);
           })
           .catch(error => {
-            if (id === revision.current && !imageController.signal.aborted) setAnswerImage({ title: brief.title, loading: false, error: error instanceof Error && error.message === 'The visual could not be generated.' ? error.message : 'The visual was unavailable.' });
+            if (id === revision.current && !imageController.signal.aborted) {
+              telemetry.record('image.lifecycle', { phase: 'error', duration_ms: performance.now() - imageStarted }, turnId);
+              setAnswerImage({ title: brief.title, loading: false, error: error instanceof Error && error.message === 'The visual could not be generated.' ? error.message : 'The visual was unavailable.' });
+            }
           })
-          .finally(() => { if (imageAbortRef.current === imageController) imageAbortRef.current = null; });
+          .finally(() => { if (imageAbortRef.current === imageController) { imageAbortRef.current = null; imageTelemetryRef.current = null; } });
       }
       if (initialJourney) {
         const navigation = await initialJourney;
         if (id !== revision.current || controller.signal.aborted) return;
-        if (!navigation.ok) return;
+        if (!navigation.ok) { navigationFailed(); return; }
       }
       if (result.world) {
         setWorld(result.world);
@@ -155,41 +211,45 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
         const supported = target ? catalogueTarget(target) : null;
         if (target && (!supported || supported.id !== queryTarget?.id) && navigationState) {
           const command: WorldCommand = supported ? { type:'flyTo',targetId:supported.id } : { type:'flyToLocation', ...target };
-          const navigation = await executeLiveNavigation({ commands: [command], acknowledgement: '', context: '' }, { signal: controller.signal });
-          if (!navigation.ok) return;
+          const navigation = await navigate({ commands: [command], acknowledgement: '', context: '' });
+          if (!navigation.ok) { navigationFailed(); return; }
         }
       }
       if (id !== revision.current || controller.signal.aborted) return;
       if (initialPerspectiveJourney) {
         const navigation = await initialPerspectiveJourney;
-        if (!navigation.ok) return;
+        if (!navigation.ok) { navigationFailed(); return; }
       }
       if (id !== revision.current || controller.signal.aborted) return;
       const finalPerspective = result.world?.perspective;
       if (finalPerspective && getWorldState()?.perspective !== finalPerspective) {
-        const navigation = await executeLiveNavigation({ commands: [{ type: 'setPerspective', perspective: finalPerspective }], acknowledgement: '', context: '' }, { signal: controller.signal });
-        if (!navigation.ok) return;
+        const navigation = await navigate({ commands: [{ type: 'setPerspective', perspective: finalPerspective }], acknowledgement: '', context: '' });
+        if (!navigation.ok) { navigationFailed(); return; }
       }
       if (id !== revision.current || controller.signal.aborted) return;
       live.current?.say(delegationId ?? null, `Continue naturally with at most three short sentences without repeating the opening. ${explanation}`);
     } catch (e) {
       if (id !== revision.current || controller.signal.aborted) return;
+      turnOutcome = 'error';
+      telemetry.record('turn.error', { error_kind: classifyTelemetryError(e, caughtErrorKind, lastHttpStatus) }, turnId);
       const message = e instanceof Error ? e.message : 'Something interrupted the explanation.';
       setError(message); setProgress('');
       live.current?.say(delegationId ?? null, `Tell the user briefly: ${message}`);
     } finally {
-      if (id === revision.current) { setBusy(false); active.current = null; }
+      const interrupted = id !== revision.current || controller.signal.aborted;
+      telemetry.record('turn.finished', { outcome: interrupted ? (controller.signal.aborted ? 'cancelled' : 'stale') : turnOutcome }, turnId);
+      if (id === revision.current) { setBusy(false); active.current = null; activeTurnRef.current = null; }
     }
   }, [ready, world, questionText, navigationState, rows]);
   useEffect(() => { askRef.current = (q, id) => { void ask(q,id); }; onAskReady(q => { void ask(q); }); return () => onAskReady(null); }, [ask, onAskReady]);
   useEffect(() => {
     const controller = createLiveController({
-      onStatus:setVoiceStatus, onTranscript:setRows, onError:setError,
+      onStatus:status => { setVoiceStatus(status); telemetry.record('voice.status', { status: voiceTelemetryStatus(status) }, activeTurnRef.current ?? undefined); }, onTranscript:setRows, onError:setError,
       onAssistantText:emphasize,
       onDelegation:({id,query}) => askRef.current(query,id),
     });
     live.current = controller;
-    return () => { revision.current++; active.current?.abort(); imageAbortRef.current?.abort(); controller.dispose(); live.current = null; };
+    return () => { if (activeTurnRef.current) telemetry.record('turn.cancelled', { reason: 'unmount' }, activeTurnRef.current); if (imageAbortRef.current && imageTelemetryRef.current) telemetry.record('image.lifecycle', { phase: 'cancelled', duration_ms: performance.now() - imageTelemetryRef.current.started }, imageTelemetryRef.current.turnId); revision.current++; active.current?.abort(); imageAbortRef.current?.abort(); controller.dispose(); live.current = null; };
   }, [emphasize]);
   useEffect(() => {
     return subscribeWorldState(setNavigationState);
@@ -206,8 +266,11 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
   }, []);
   const isOn = ['checking availability','requesting microphone','connecting','awaiting session start','started','finalizing'].includes(voiceStatus);
   const cancel = () => {
+    if (activeTurnRef.current) telemetry.record('turn.cancelled', { reason: 'user' }, activeTurnRef.current);
+    if (imageAbortRef.current && imageTelemetryRef.current) telemetry.record('image.lifecycle', { phase: 'cancelled', duration_ms: performance.now() - imageTelemetryRef.current.started }, imageTelemetryRef.current.turnId);
     revision.current++; active.current?.abort(); active.current = null;
     imageAbortRef.current?.abort(); imageAbortRef.current = null;
+    imageTelemetryRef.current = null;
     if (busy) setAnswer('');
     setOpening(''); setSpokenCaption(''); setAnswerImage(null); setRows(current => current.filter(row => row.who === 'user').slice(-1));
     setBusy(false); setProgress(''); live.current?.stop();
@@ -234,5 +297,6 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
       <button className={`${styles.voiceButton} ${isOn ? styles.active : ''}`} type="button" disabled={!ready} onClick={() => isOn ? cancel() : void live.current?.start()} aria-label={isOn ? 'Stop voice' : 'Talk to Earth'} title={isOn ? 'Stop voice' : 'Talk to Earth'}>{isOn ? <Square size={17}/> : <Mic size={20}/>}</button>
     </div>
     {isOn && <p className={styles.live}>Listening · interrupt anytime</p>}
+    <details className={styles.diagnostics}><summary>Diagnostics</summary><div><button type="button" onClick={downloadTelemetryReport}>Export debug report</button><button type="button" onClick={() => telemetry.clear()}>Clear diagnostics</button><p>Stored only in this tab. Raw questions, answers, audio, images, and credentials are excluded.</p></div></details>
   </section>;
 }

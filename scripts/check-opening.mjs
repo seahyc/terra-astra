@@ -11,4 +11,10 @@ const stream=new ReadableStream({start(c){for(let i=0;i<bytes.length;i+=3)c.enqu
 const text=[];assert.deepEqual(await readAnswerStream(new Response(stream,{headers:{'Content-Type':'application/x-ndjson'}}),(t,done)=>text.push([t,done])),{ok:true});
 assert.deepEqual(text,[['Angkor’s towers.',false],['Angkor’s towers.',true]]);
 await assert.rejects(()=>readAnswerStream(new Response('{"type":"opening.delta","delta":"Hello"}\n',{headers:{'Content-Type':'application/x-ndjson'}}),()=>{}),/before completion/);
-console.log('PASS streamed opening precedes final result, split UTF-8 framing, incomplete stream fails closed');
+await assert.rejects(()=>readAnswerStream(new Response('<!DOCTYPE html><h1>Private upstream detail</h1>',{status:502,headers:{'Content-Type':'text/html'}}),()=>{}),error=>error.message==='The answer service is temporarily unavailable. Please try again.');
+await assert.rejects(()=>readAnswerStream(new Response('<html>Unexpected login page</html>',{headers:{'Content-Type':'text/html'}}),()=>{}),/unreadable response/);
+await assert.rejects(()=>readAnswerStream(new Response('{bad secret payload',{headers:{'Content-Type':'application/json'}}),()=>{}),error=>error.message==='The answer service returned an unreadable response. Please try again.');
+let cancelled=false;
+await assert.rejects(()=>readAnswerStream(new Response(new ReadableStream({start(c){c.enqueue(new TextEncoder().encode('not-json private upstream detail\n'));},cancel(){cancelled=true;}}),{headers:{'Content-Type':'application/x-ndjson'}}),()=>{}),/unreadable response/);
+assert.equal(cancelled,true);
+console.log('PASS streamed opening/UTF-8; incomplete stream; safe HTML/malformed JSON errors; broken stream cancellation');

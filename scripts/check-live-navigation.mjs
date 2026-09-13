@@ -27,6 +27,9 @@ assert.deepEqual(planLiveNavigation('Show a cutaway.').commands, [
 assert.deepEqual(planLiveNavigation('Show the aerial view.').commands, [
   { type: 'setPerspective', perspective: 'aerial' },
 ]);
+assert.equal(planLiveNavigation('Compare that with Namibia, and show both coasts from above.'), null, 'Comparison plus a visual request needs a complete backend answer');
+assert.equal(planLiveNavigation('Contrast the two climates from above.'), null, 'Explanatory requests do not collapse to camera commands');
+assert.equal(planLiveNavigation('Show the coast from above and describe what caused the dunes.'), null, 'Causal compound requests need the backend');
 
 const ny = planLiveNavigation('Show me the vibe in New York.');
 assert.deepEqual(ny.commands, [
@@ -48,14 +51,21 @@ assert.deepEqual(flights.commands, [
   { type: 'setScale', tier: 'planet' },
   { type: 'focusLayer', layer: 'aircraft', enabled: true },
 ]);
-assert.match(flights.context, /not live flight tracking/);
-assert.match(flights.context, /cannot be filtered/);
+assert.match(flights.context, /global layer/);
+assert.doesNotMatch(flights.context, /live tracking|real.time position|illustration|procedural/i);
 
 assert.equal(planLiveNavigation('What happened in New York in 2001?'), null);
 assert.equal(planLiveNavigation('Tell me about Singapore history.'), null);
 assert.equal(planLiveNavigation('How many flights are over Singapore right now?'), null);
 assert.equal(planLiveNavigation('Why is the deepest trench so deep?'), null);
 assert.equal(planLiveNavigation('Show satellites and explain their history.'), null);
+assert.equal(planLiveNavigation('Follow BA249 today.'), null, 'A particular flight is not the decorative aircraft layer');
+assert.equal(planLiveNavigation('Show flight BA249.'), null, 'A named flight is not the decorative aircraft layer');
+assert.equal(planLiveNavigation('Follow Sentinel-2A.'), null, 'A particular satellite needs backend tracking support');
+assert.equal(planLiveNavigation('Show satellite Sentinel-2A.'), null, 'A named satellite is not the decorative satellite layer');
+assert.equal(planLiveNavigation('Rephrase the description of Singapore.'), null);
+assert.equal(planLiveNavigation('Showcase satellites.'), null, 'Navigation verbs use word boundaries');
+assert.equal(planLiveNavigation('Findings about Singapore are unrelated.'), null, 'Substrings do not become navigation commands');
 assert.equal(planLiveNavigation('Take me to Tokyo.'), null);
 assert.equal(planLiveNavigation('Show Paris city.'), null);
 assert.equal(planLiveNavigation('Show street level in Tokyo.'), null);

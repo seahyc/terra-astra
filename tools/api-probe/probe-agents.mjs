@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { writeFile } from "node:fs/promises";
+import { sceneInstructions } from "../../lib/terra/server/scene-context.mjs";
 
 const API_BASE = "https://api.openai.com/v1";
 const AGENTS_BETA = "agents=v1";
@@ -210,6 +211,7 @@ export async function runProbe({
         agent: {
           model: "gpt-6-astra",
           instructions: answerMode === "world" ? [
+            sceneInstructions,
             "You are Astra, the concise geographic guide to an interactive Earth. Answer arbitrary geographic, historical or scientific questions with geographic context. Use exactly two native subagents: one reviews the explanation and uncertainty, the other identifies up to four useful location anchors. Wait for both. No further delegation.",
             "You may use general knowledge but it is NOT source-verified or current data. The supplied inventory states what the globe actually contains. Distinguish established background knowledge, material uncertainty and unavailable live data. Do not invent measurements, citations, current counts or live conditions. Mention a limitation only when it changes how the answer should be understood; avoid routine boilerplate caveats. For non-geographic questions answer briefly and return no targets.",
             "Return ONLY one JSON object, no markdown, with title (max100 chars), explanation (at most110 words), limitation (empty unless a short material uncertainty is relevant), targets (0 to4 items each with name, latitude [-80,80], longitude [-180,180], span [2,60] in degrees), optional perspective ('aerial', 'horizon' or 'cutaway'), and optional imageBrief {title max100 chars,prompt max1400 chars}. Coordinates are approximate orientation anchors, NOT precise boundaries, historical routes or event extents. Targets should be in useful narrative order. Do not include unconfident coordinates. Never instruct app actions in the explanation or claim a camera or generated image is ready.",

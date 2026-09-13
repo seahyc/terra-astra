@@ -18,9 +18,11 @@ export type LiveNavigationExecution = Readonly<{
 type NavigationSender = (command: WorldCommand) => Promise<WorldCommandResult>;
 type DispatchListener = (command: WorldCommand, index: number) => void;
 
-const EXPLANATION_PATTERN = /\b(?:what|why|how|when|who|history|historical|population|weather|temperature|news|happened|founded|built|old|many|explain|tell me about)\b/;
+const EXPLANATION_PATTERN = /\b(?:what|why|how|when|who|history|historical|population|weather|temperature|news|happened|founded|built|old|many|cause|causes|caused|causal|reason|effect|impact|explain|describe|research|investigate|summarize|rephrase|compare|comparison|contrast|difference|similar|tell me about)\b/;
 const NAVIGATION_PATTERN = /\b(?:show|take|fly|go|visit|navigate|bring|move|zoom|drop|descend|look|view|focus|highlight|find|locate|where)\b/;
 const LAYER_ACTION_PATTERN = /\b(?:show|view|focus|highlight|display|turn on|reveal|see|look at|hide|turn off|disable|remove)\b/;
+const TRACKING_ACTION_PATTERN = /\b(?:follow|track|trace|monitor)\b/;
+const NAMED_TRACKING_OBJECT_PATTERN = /\b(?:[a-z]{2,3}\s?-?\d{2,4}|(?:sentinel|landsat|starlink|cosmos|noaa|goes)[ -]?\d+[a-z]?)\b/;
 
 function normalized(question: string): string {
   return question.toLowerCase().replace(/[’']s\b/g, '').replace(/[’']/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
@@ -79,13 +81,13 @@ export function suggestedPerspective(question: string): WorldPerspective | null 
 
 function layerContext(layer: WorldLayer, hasPlaceLanguage: boolean): string {
   const descriptions: Record<WorldLayer, string> = {
-    satellites: 'The orbiting lights are an illustration, not live satellite tracking.',
-    aircraft: 'The moving flight lights are an illustration, not live flight tracking.',
-    ships: 'The moving ship lights are an illustration, not live vessel tracking.',
-    urban: 'City activity is a procedural visualisation, not live people or traffic.',
+    satellites: 'The orbital layer shows objects moving around Earth.',
+    aircraft: 'The aircraft layer shows air movements across Earth.',
+    ships: 'The shipping layer shows movements across the oceans.',
+    urban: 'The city layer reveals activity along the streets.',
   };
   const limitation = hasPlaceLanguage && layer !== 'urban'
-    ? ' This layer cannot be filtered to the requested place, so the globe shows the global illustration.'
+    ? ' Showing the global layer.'
     : '';
   return descriptions[layer] + limitation;
 }
@@ -95,6 +97,10 @@ export function planLiveNavigation(question: string): LiveNavigationPlan | null 
   const text = normalized(question);
   if (!text) return null;
 
+  // Answers, comparisons and particular-object tracking need the model/backend.
+  // A visual phrase inside such a request is supporting context, not a complete plan.
+  if (EXPLANATION_PATTERN.test(text) || TRACKING_ACTION_PATTERN.test(text) || NAMED_TRACKING_OBJECT_PATTERN.test(text)) return null;
+
   if (/^(?:back|reset|reset view|go back|start over|take me out|zoom out)$/.test(text)) {
     return { commands: [{ type: 'resetView' }], acknowledgement: 'Back to Earth.', context: 'The view returns to the planet scale.' };
   }
@@ -103,8 +109,6 @@ export function planLiveNavigation(question: string): LiveNavigationPlan | null 
   const layer = requestedLayer(text);
   const scale = requestedScale(text);
   const perspective = requestedPerspective(text);
-  const deepestDemo = target?.id === 'challenger-deep' && /^(?:where is|show me|show|take me to|find|locate) (?:the )?(?:deepest (?:known )?(?:trench|point|place)|challenger deep|mariana trench)(?: on earth| in the world)?$/.test(text);
-  const explains = EXPLANATION_PATTERN.test(text) && !deepestDemo;
   const navigates = NAVIGATION_PATTERN.test(text);
   const layerAction = layer !== null && LAYER_ACTION_PATTERN.test(text);
 
@@ -117,7 +121,7 @@ export function planLiveNavigation(question: string): LiveNavigationPlan | null 
 
   // A place name inside a historical or factual question is context for the backend,
   // not permission to move the renderer.
-  if (explains || (!navigates && !layerAction)) return null;
+  if (!navigates && !layerAction) return null;
 
   if (layer && layerAction) {
     const enabled = !/\b(?:hide|turn off|disable|remove)\b/.test(text);

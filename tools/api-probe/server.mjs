@@ -7,6 +7,7 @@ import { parseEnv } from "node:util";
 import { runProbe, SEA_DATASET_INVENTORY, redact } from "./probe-agents.mjs";
 import { createImageAnswerService } from './image-answer.mjs';
 import { createAnswerRouter } from '../../lib/terra/server/answer-router.mjs';
+import { sceneInventory } from '../../lib/terra/server/scene-context.mjs';
 
 const HOST = "127.0.0.1";
 const PORT = 5180;
@@ -29,7 +30,7 @@ const page = await readFile(new URL("./index.html", import.meta.url));
 const profile = await readFile(PROFILE_PATH);
 const { points: _profilePoints, ...profileSummary } = JSON.parse(profile);
 const agentInventory = Object.freeze({ ...SEA_DATASET_INVENTORY,
-  world_visualization: { available_in_client: true, command_boundary: 'Shared WorldCommand supports any validated geographic anchor at regional scale', detailed_city_targets: ['Singapore','New York'], orbit: '12 deterministic illustrated orbital lights', aircraft: '20 deterministic illustrated city-pair movements', ships: '6 deterministic illustrated open-water movements', urban: 'Procedural activity is available only for curated New York and Singapore city views' },
+  world_visualization: sceneInventory,
   java_profile: { ...profileSummary, visualization: { available_in_client: false, point_count: _profilePoints.length, limitation: 'Available to the answer backend as measured evidence; no shared WorldCommand visualization exists.' } } });
 const plannerBundle = await build({ entryPoints: [new URL('../../lib/terra/answer-plan.ts', import.meta.url).pathname], bundle: true, platform: 'node', format: 'esm', write: false });
 const { planQuestion, worldAnswerSchema } = await import(`data:text/javascript;base64,${Buffer.from(plannerBundle.outputFiles[0].text).toString('base64')}`);
