@@ -26,10 +26,10 @@ export function sampleElevation(grid: Int16Array, width: number, height: number,
 
 /** Camera-ray distance through the luminous body controls how much deep light is seen. */
 export const spatialVertexGLSL = `
-uniform float spatial;uniform float depthMix;uniform float cutaway;uniform vec3 cutNormal;uniform vec3 cutFacing;uniform float cameraDistance;
+uniform float seaMotion;uniform float spatial;uniform float depthMix;uniform float cutaway;uniform vec3 cutNormal;uniform vec3 cutFacing;uniform float cameraDistance;
 vec3 spatialPosition(vec3 original){
   if(spatial<.5)return original;
-  return normalize(original)*mix(1.00002,length(original),depthMix);
+  float wave=seaMotion*motion*.0012*sin(original.x*31.0+original.z*19.0+time*.65)*sin(original.y*23.0-time*.38);return normalize(original)*(mix(1.00002,length(original),depthMix)+wave*depthMix);
 }
 float spatialVisibility(vec3 world){
   if(spatial<.5)return 1.0;

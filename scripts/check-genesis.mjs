@@ -9,7 +9,7 @@ import { personalGeography, personalCamera, personalAstra, personalArc } from '.
 import { scintillation } from '../lib/terra/scintillation.ts';
 import { memoryLight, cityScreenBudget } from '../lib/terra/choreography.ts';
 
-const root = new URL('../lib/terra/', import.meta.url).href;
+const root = new URL('../lib/', import.meta.url).href;
 registerHooks({ resolve(specifier, context, next) {
   if (context.parentURL?.startsWith(root) && specifier.startsWith('.') && !specifier.endsWith('.ts')) return next(specifier + '.ts', context);
   return next(specifier, context);
