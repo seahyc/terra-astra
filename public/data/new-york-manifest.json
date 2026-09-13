@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "preparedAt": "2026-09-13T04:19:59.491938+00:00",
+  "seed": 260913,
+  "scope": "Curated lower-Manhattan showcase; not all New York City. OSM street geometry with artistically sampled light. Activity is deterministic procedural movement, never tracked people or live traffic.",
+  "target": {
+    "id": "new-york",
+    "lat": 40.721562,
+    "lon": -73.995718
+  },
+  "bounds": {
+    "south": 40.7035,
+    "west": -74.0194,
+    "north": 40.7396,
+    "east": -73.972
+  },
+  "feather": {
+    "centerLat": 40.72155,
+    "centerLon": -73.9957,
+    "halfLatitude": 0.018050000000002342,
+    "halfLongitude": 0.02370000000000516,
+    "suggestedFadeStart": 0.65,
+    "suggestedFadeEnd": 1
+  },
+  "layers": {
+    "new-york-streets": {
+      "count": 38060,
+      "stride": 3,
+      "bytes": 456720,
+      "sha256": "220d1acde76d891c5f69e957844f07533d2cd6dbfecd362efdd8fba03029912f"
+    },
+    "new-york-stars": {
+      "count": 24236,
+      "stride": 6,
+      "bytes": 581664,
+      "sha256": "eca8d19b0611b4facca54d0e2cd8e4731e068d795f1d220e4ec2613471374409"
+    }
+  },
+  "streetSegments": 19030,
+  "streetWays": 3755,
+  "streetNames": 352,
+  "source": {
+    "name": "OpenStreetMap contributors",
+    "license": "Open Database License (ODbL) 1.0",
+    "url": "https://www.openstreetmap.org/copyright",
+    "endpoint": "https://overpass-api.de/api/interpreter",
+    "query": "[out:json][timeout:20];way[\"highway\"][\"highway\"!~\"footway|path|steps|cycleway|service|construction|proposed\"](40.7035,-74.0194,40.7396,-73.9720);out geom;",
+    "retrievedAt": "2026-09-13T04:18:47.670326+00:00",
+    "sourceTimestamp": "2026-09-13T04:16:49Z",
+    "rawResponseSha256": "2dbd35f25839b6df1ddaa924a5b7e7633e43848c097b6fb32bfe2dd93036ae70"
+  },
+  "preparation": "Matches scripts/prepare-geography.py world XYZ: x=cos(lat)*sin(lon), y=sin(lat), z=cos(lat)*cos(lon). Float32 little-endian. Road endpoints radius 1.000014, sampled street stars radius 1.000018. Clip both endpoints to bounds; reject segments shorter than 2m or longer than 1200m; seed 260913; stars sampled every ~12m, 0.8 major road / 0.6 other road probability. Brightness and sizes are artistic."
+}
