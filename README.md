@@ -2,7 +2,7 @@
 
 Earth, constellated. A geographic Earth made of light opens into a living volume of stars. Choose three meaningful places, find their constellation, and carry it back to Earth.
 
-**Hackathon candidate:** the living-universe branch is under integration. The public app currently serves the preserved v0.4.1 release. See [active sprint](docs/hackathon/ACTIVE-SPRINT.md) for ownership and [release history](CHANGELOG.md) for exact milestones.
+**Public release: v0.5.** The living-universe journey is deployed and verified in the public browser. Its exact application source is `04ac6b3c04d8febbac175d5760298eb83a9c146c`, preserved by the `v0.5` tag and pushed to `main`. See [release history](CHANGELOG.md) for milestones and [submission preparation](docs/hackathon/SUBMISSION-PREP.md) for remaining delivery items. Repository access for judges, video verification/upload, and portal submission remain unresolved.
 
 - [Open Terra Astra](https://terra-astra.riffster.chatgpt.site)
 - [Build history](https://terra-astra.riffster.chatgpt.site/history)
@@ -25,6 +25,8 @@ npx tsc --noEmit --incremental false
 node --experimental-strip-types scripts/check-depth.mjs
 node --experimental-strip-types scripts/check-choreography.mjs
 node --experimental-strip-types scripts/check-memory.mjs
+node --experimental-strip-types scripts/check-personal-model.mjs
+node --experimental-strip-types scripts/check-transformation.mjs
 npm run build
 ```
 
@@ -42,7 +44,14 @@ React 19 and TypeScript provide the interface. Vinext/Vite provides Next-compati
 | `lib/terra/spatial.ts` | Relief and spatial attenuation |
 | `lib/terra/choreography.ts` | Geographic flight and remembered return |
 | `lib/terra/personal-contract.ts` | Typed three-place and morph boundaries |
+| `lib/terra/transformation.ts` | Reversible Earth-to-Astra particle transformation |
+| `lib/terra/personal-rendering.ts` | Geographic anchors and personal constellation geometry |
+| `lib/personal/` | Sourced place catalogue and canonical validation |
 | `public/data/` | Prepared geography and provenance manifests |
+
+## Verified release
+
+Sites version 7 was deployed successfully on 13 September 2026 at 11:41:33 SGT. Public browser verification covered Earth, opening Astra, the submitted three-place constellation, and the return to Earth with no console warnings or errors in the tested route. Desktop and phone-width compositions were inspected; this is not physical-phone testing. All source checks above, TypeScript, and the production build passed. See [current status](docs/hackathon/STATUS.md) for exact deployment identifiers and remaining submission work.
 
 ## What predates the hackathon
 

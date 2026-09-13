@@ -1,17 +1,31 @@
 # Sprint status
 
-Deadline 13 September 2026 15:30 Asia/Singapore. Freeze 14:00; assets 15:00; submit by 15:20. Preserve recording/upload buffer; cut optional inference before shortening it.
+## Current release — v0.5
 
-- Source recovered and running locally at http://localhost:5173/ (portable Node/Vinext setup).
-- Shared GitHub: https://github.com/shariffster/terra-astra. Private; all release tags pushed and remote hashes read back. `main` and `sprint/hackathon-integration` contain v0.4.1 (`c4a4dad2281203eedc50138d4dac2a1c4048309c`). v0.4 remains preserved.
-- Existing public Site identity retained: appgprj_6aa175fa488c8191a2677ce883c203a7. https://terra-astra.riffster.chatgpt.site now serves v0.4.1. Native deployment appgdep_6aa61516aadc81918d4ce79eeee28993 succeeded at 11:14:45 SGT; saved Sites version 6. Unauthenticated HTTP read returns 200; browser shows v0.4.1, WebGL and no console errors/warnings.
-- seahyc write access verified through GitHub at 11:17 SGT; no invitation remains pending. Portal join is a separate required human action.
-- Scope v2: proposed Terra ↔ Astra transformation, exactly three meaningful places and personal ending. NOT implemented; see REVISED-PLAN.md and TEAMMATE-TASK.md.
-- Production freeze: completed v0.4.1 stays unchanged. Documentation only; no application edits, Sites source push, saved version or deployment. Supplied v0.4/version-5 references are historical, not a rollback instruction.
-- Ask Astra assignment is superseded; runtime inference is stretch. Preserve unused feat/ask-astra; proposed YC branch feat/personal-constellation awaits contract agreement.
-- Judges need repository access before submission. Private setup is not submission-ready access.
-- Exactly 90-second video, uploaded video URL, final links and submission confirmation are outstanding. Shot plan prepared in DEMO-90-SECONDS.md; local recorder launch was unsuccessful, so no recording/export is claimed.
+The latest user instruction authorized implementation and deployment of the living-universe journey, superseding the earlier v0.4.1 production freeze. The reversible Terra ↔ Astra transformation, three meaningful places, personal constellation, and closing return are implemented and publicly deployed.
 
-Lead owns shared UI/rendering, camera, morph, shared types and releases. YC owns only the agreed isolated catalogue, form, validation/model and submission draft. Use separate Git branches; no concurrent shared-file editing.
+- Application source: `04ac6b3c04d8febbac175d5760298eb83a9c146c`, annotated tag `v0.5`, pushed to GitHub `main`.
+- Public app: https://terra-astra.riffster.chatgpt.site
+- Sites project: `appgprj_6aa175fa488c8191a2677ce883c203a7`.
+- Saved Sites version 7: `appgprj_6aa175fa488c8191a2677ce883c203a7~appgver_b18015e37f4481919d6c14dce2ea6e13`.
+- Native deployment: `appgdep_6aa61b5e76f0819197627142efb47db3`, succeeded 13 September 2026 at 11:41:33 SGT.
+- Actual public browser showed v0.5 and all four demo beats: Earth, opening Astra, the submitted three-place constellation, and returning to Earth. No console warnings or errors occurred in the tested route.
+- Depth, choreography, memory, personal-model, transformation, TypeScript, and production-build checks passed. Desktop and phone-width visual verification completed. No physical-phone validation is claimed.
+- Actual public-app demo footage was captured. The planned 90-second export is encoding; duration/playback verification and upload remain **PENDING**.
 
-Shared scope/YC handoff: https://docs.google.com/document/d/1185vhp0TU5T_sj6fQpGUKTDrzTuzakI0JgYOevvKZuM/edit — created in the supplied shared folder. Existing reference analysis preserved. Git remains the code/contract review authority.
+## Remaining submission work
+
+- GitHub: https://github.com/shariffster/terra-astra remains **PRIVATE**. A user response about public access is pending; judge access is not complete.
+- Video: planned GitHub release `v0.5` asset `terra-astra-demo-90.mp4`. Encoding is in progress; no verified export, uploaded asset, or usable video URL is claimed yet.
+- Portal team membership and final submission are **UNKNOWN / not confirmed**. GitHub collaborator access does not establish portal membership.
+- Verify final app, repository, and video links with judge-equivalent access and retain submission confirmation.
+
+Deadline: 13 September 2026, 15:30 Asia/Singapore. Planning checkpoints remain 14:00 feature freeze, 15:00 assets ready, and 15:20 submission target. These checkpoints are distinct from the superseded instruction to leave v0.4.1 unchanged.
+
+## Ownership and preserved history
+
+The user explicitly assigned the personal-constellation track to an Astra agent instead of YC. Isolated world and personal tracks were integrated and verified by the lead; shared source, releases, publication, and demo remain lead responsibilities. See [active sprint](ACTIVE-SPRINT.md) and [Astra evidence](ASTRA-EVIDENCE.md).
+
+Pre-existing v0.4 is preserved at `9b9e2ec4ef3534b463e20d4d08c4ae3de444843d` under `v0.4` and `pre-hackathon`. Today's v0.4.1 remains preserved at `c4a4dad2281203eedc50138d4dac2a1c4048309c`; its earlier Sites version 6 deployment succeeded at 11:14:45 SGT. Neither historical release describes the current public v0.5 app.
+
+`seahyc` GitHub write access was verified at 11:17 SGT with no pending invitation. The earlier shared scope/YC handoff remains historical context: https://docs.google.com/document/d/1185vhp0TU5T_sj6fQpGUKTDrzTuzakI0JgYOevvKZuM/edit. Git remains the source and contract review authority. Historical proposal/freeze documents do not override the latest authorized implementation.
