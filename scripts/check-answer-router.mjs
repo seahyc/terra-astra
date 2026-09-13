@@ -17,6 +17,24 @@ test('ordinary arbitrary questions finish in one call without native sessions',a
   const result=await answer(input);assert.equal(calls,1);assert.equal(result.measured.subagent_count,0);assert.equal(result.world.targets[0].name,'Tokyo');assert.equal(result.world.imageBrief,undefined);
 });
 
+test('conversation-only exchanges return a reply without an opening or native session',async()=>{
+  let calls=0,openings=0;
+  const answer=createAnswerRouter({worldAnswerSchema,runProbe:()=>assert.fail('No delegation for conversation'),fetchImpl:async()=>{
+    calls++;return response({route:'conversation',needsWeb:false,conversationReply:'I received your message. I cannot verify the microphone hardware from text alone.',answer:null});
+  }});
+  const result=await answer({...input,question:'Can you hear me?',onOpening:()=>openings++});
+  assert.equal(calls,1);assert.equal(openings,0);assert.equal(result.kind,'conversation_reply');assert.equal(result.world,null);assert.deepEqual(result.sources,[]);
+  assert.equal(result.conversationReply,'I received your message. I cannot verify the microphone hardware from text alone.');assert.equal(result.measured.output,result.conversationReply);
+  assert.equal(result.measured.model,'gpt-5.6-luna');assert.equal(result.measured.route,'quick');assert.equal(result.measured.subagent_count,0);
+});
+
+test('mixed conversation and subject answer remain separate without rewriting the article',async()=>{
+  const exact='Hello is part of the subject quotation; keep this arbitrary wording verbatim.';
+  const answer=createAnswerRouter({worldAnswerSchema,runProbe:()=>assert.fail('No delegation for quick mixed request'),fetchImpl:async()=>response({route:'quick',needsWeb:false,conversationReply:'I received the text portion of your mic check.',answer:{...world,explanation:exact}})});
+  const result=await answer({...input,question:'Mic check, then explain this sentence.'});
+  assert.equal(result.kind,'direct_answer');assert.equal(result.conversationReply,'I received the text portion of your mic check.');assert.equal(result.world.explanation,exact);assert.equal(result.measured.output,exact);
+});
+
 test('fresh facts escalate to Terra search and retain actual citation annotations',async()=>{
   const bodies=[];
   const answer=createAnswerRouter({worldAnswerSchema,runProbe:()=>assert.fail('No native session needed'),fetchImpl:async(url,init)=>{

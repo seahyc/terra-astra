@@ -1,11 +1,3 @@
-// Voice checks belong in the conversation; keep a subject explanation focused.
-// Preserve a microphone-only reply instead of making the panel empty.
-export function cleanEditorialCopy(text: string): string {
-  const trimmed = text.trim();
-  const remaining = trimmed.replace(/^(?:(?:yes|yep|yeah|sure|ok(?:ay)?)[\s,—–!:-]+)?(?:i can hear you(?:\s+(?:clearly|loud and clear|just fine))?|i[’']m listening|your (?:mic|microphone|audio) is (?:working|coming through)(?:\s+(?:clearly|fine))?)[.!?]\s*/i, '').trim();
-  return remaining || trimmed;
-}
-
 // Return original sentence spans, including their whitespace, so callers can
 // retain exact offsets. Protect common abbreviations before ICU segmentation.
 export function sentenceSegments(text: string): string[] {
@@ -30,16 +22,20 @@ export function firstParagraph(text: string): string {
 }
 
 export function splitEditorialAnswer(text: string) {
-  const copy = cleanEditorialCopy(text);
+  const copy = text.trim();
   const lead = firstParagraph(copy);
   return { lead, detail: copy.slice(lead.length).trim() };
 }
 
 export function spokenParagraph(text: string): string {
-  return firstParagraph(cleanEditorialCopy(text))
+  return firstParagraph(text)
     .replace(/\[([^\]]+)\]\(https?:\/\/[^\s)]+\)/g, '$1')
+    .replace(/https?:\/\/[^\s<>()\[\]{}"'`]+/g, url => url.match(/[.,!?;:]+$/)?.[0] ?? '')
+    .replace(/\(\s*\)|\[\s*\]|\{\s*\}/g, '')
     .replace(/cite[^]+/g, '')
     .replace(/\*\*|__|`/g, '')
+    .replace(/\s+([,.;:!?])/g, '$1')
+    .replace(/[:;,]\s*([.!?])/g, '$1')
     .replace(/\s+/g, ' ').trim();
 }
 

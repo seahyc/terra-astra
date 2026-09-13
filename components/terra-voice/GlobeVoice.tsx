@@ -26,9 +26,15 @@ function catalogueTarget(target: GeneratedWorldTarget): CatalogueWorldTarget | n
 }
 
 function answerWithLinks(text: string) {
-  return text.split(/(\[[^\]]+\]\(https?:\/\/[^\s)]+\))/g).map((part,index) => {
+  return text.replace(/cite[^]+/g, '').split(/(\[[^\]]+\]\(https?:\/\/[^\s)]+\)|https?:\/\/[^\s<>]+|\*\*[^*]+\*\*)/g).map((part,index) => {
     const match = part.match(/^\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)$/);
-    return match ? <a key={index} href={match[2]} target="_blank" rel="noopener noreferrer">{match[1]}</a> : part;
+    if (match) return <a key={index} href={match[2]} target="_blank" rel="noopener noreferrer">{match[1]}</a>;
+    if (part.startsWith('**') && part.endsWith('**')) return <strong key={index}>{part.slice(2,-2)}</strong>;
+    if (/^https?:\/\//.test(part)) {
+      const url = part.replace(/[.,;:!?\])]+$/, '');
+      try { return <span key={index}><a href={url} target="_blank" rel="noopener noreferrer">{new URL(url).hostname.replace(/^www\./, '')}</a>{part.slice(url.length)}</span>; } catch { return part; }
+    }
+    return part;
   });
 }
 
@@ -75,6 +81,7 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
   const [progress, setProgress] = useState('');
   const [answer, setAnswer] = useState('');
   const [opening, setOpening] = useState('');
+  const [conversationReply, setConversationReply] = useState('');
   const [spokenCaption,setSpokenCaption] = useState('');
   const [questionText, setQuestionText] = useState('');
   const [world, setWorld] = useState<WorldAnswer | null>(null);
@@ -105,6 +112,7 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
   }, []);
   const viewLocation = (target: GeneratedWorldTarget) => {
     locationAbortRef.current?.abort();
+    setModelStatus(null);
     const controller = new AbortController(); locationAbortRef.current = controller;
     void executeLiveNavigation({ commands: [{type:'clearProceduralModel'},{type:'flyToLocation',...target},{type:'setPerspective',perspective:'aerial'}], acknowledgement:'',context:'' }, {signal:controller.signal})
       .then(result => { if (!controller.signal.aborted && !result.ok) setError(result.reason ?? 'This location could not be shown.'); });
@@ -127,7 +135,7 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
     const controller = new AbortController(); active.current = controller;
     const lastUserIndex = rows.findLastIndex(row => row.who === 'user');
     setTranscriptBaseline({ userIndex: lastUserIndex, userText: lastUserIndex >= 0 ? rows[lastUserIndex].text.trim() : '' });
-    setError(''); setAnswer(''); setOpening(''); setSpokenCaption(''); setBusy(true); setQuestionText(question); setWorld(null); setSources([]); setAnswerImage(null); setModelStatus(null);
+    setError(''); setAnswer(''); setOpening(''); setConversationReply(''); setSpokenCaption(''); setBusy(true); setQuestionText(question); setWorld(null); setSources([]); setAnswerImage(null); setModelStatus(null);
     const selectedIds: string[] = [];
     let turnOutcome: 'completed' | 'navigation_only' | 'error' = 'completed';
     let caughtErrorKind: TelemetryErrorKind | undefined;
@@ -228,7 +236,7 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
       }
       const answerStarted = performance.now();
       let openingSeen = false;
-      const result = z.object({error:z.string().optional(), world:worldAnswerSchema.nullable().optional(), sources:z.array(z.object({url:z.string().url().regex(/^https?:\/\//),title:z.string().max(200)})).max(12).optional(), measured:z.object({output:z.string(),model:z.enum(['gpt-5.6-luna','gpt-5.6-terra','gpt-6-astra']).optional(),route:z.enum(['quick','standard','research']).optional(),subagent_count:z.number().int().nonnegative().optional(),elapsed_ms:z.number().nonnegative().optional()}).optional()}).parse(await readAnswerStream(response!, (text, complete) => {
+      const result = z.object({kind:z.enum(['conversation_reply','direct_answer','agents_terrain_answer']).optional(), conversationReply:z.string().max(2000).optional(), error:z.string().optional(), world:worldAnswerSchema.nullable().optional(), sources:z.array(z.object({url:z.string().url().regex(/^https?:\/\//),title:z.string().max(200)})).max(12).optional(), measured:z.object({output:z.string(),model:z.enum(['gpt-5.6-luna','gpt-5.6-terra','gpt-6-astra']).optional(),route:z.enum(['quick','standard','research']).optional(),subagent_count:z.number().int().nonnegative().optional(),elapsed_ms:z.number().nonnegative().optional()}).optional()}).parse(await readAnswerStream(response!, (text, complete) => {
         if (id !== revision.current || controller.signal.aborted) return;
         if (!openingSeen) { openingSeen = true; telemetry.record('answer.opening', { phase: 'first', duration_ms: performance.now() - answerStarted }, turnId); }
         if (complete) telemetry.record('answer.opening', { phase: 'complete', duration_ms: performance.now() - answerStarted }, turnId);
@@ -239,7 +247,17 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
       if (id !== revision.current || controller.signal.aborted) return;
       if (!result.measured) throw new Error('The explanation was empty. Please try again.');
       telemetry.record('answer.result', { model: result.measured.model, route: result.measured.route, subagent_count: result.measured.subagent_count, server_elapsed_ms: result.measured.elapsed_ms, duration_ms: performance.now() - answerStarted }, turnId);
-      const explanation = result.measured.output.replace(/\*\*|^[-#]\s/gm,'').replace(/cite[^]+/g, '');
+      if (result.kind === 'conversation_reply') {
+        if (result.world !== null || !result.conversationReply?.trim()) throw new Error('The conversational reply was incomplete.');
+        cancelModel();
+        resolveAnswerTarget();
+        setOpening(''); setAnswerImage(null); setModelStatus(null);
+        setConversationReply(result.conversationReply); setProgress('');
+        deliverGroundedParagraph((delegation, content) => live.current?.say(delegation, content), delegationId ?? null, result.conversationReply, {signal: controller.signal, isCurrent: () => id === revision.current});
+        return;
+      }
+      // The article reads the subject field, never the conversational reply or live transcript.
+      const explanation = result.world?.explanation ?? result.measured.output;
       deliverGroundedParagraph((delegation, content) => live.current?.say(delegation, content), delegationId ?? null, explanation, {signal: controller.signal, isCurrent: () => id === revision.current});
       setAnswer(explanation); setSources(result.sources ?? []); setProgress('');
       if (result.world) setWorld(result.world);
@@ -365,8 +383,8 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
   const hasNewLiveUser = latestUserIndex > transcriptBaseline.userIndex || (latestUserIndex === transcriptBaseline.userIndex && latestUserText !== transcriptBaseline.userText);
   const latestUser = isOn && hasNewLiveUser ? latestUserText : '';
   const userCaption = latestUser || questionText;
-  const agentCaption = spokenCaption || spokenParagraph(answer || opening);
-  const showEditorial = Boolean(questionText || answer || opening || progress || answerImage || error);
+  const agentCaption = spokenCaption || conversationReply || spokenParagraph(answer || opening);
+  const showEditorial = Boolean(world || answer || opening || answerImage || modelStatus);
   const editorialTitle = world?.title || (busy ? 'Reading the world' : questionText ? 'Astra’s field note' : 'Ask the Earth');
   const subtitle = answerSubtitle(world, navigationState, Boolean(answer), progress);
   const visibleVoiceStatus = isOn && voiceStatus !== 'started' ? voiceStatusLabel(voiceStatus) : '';

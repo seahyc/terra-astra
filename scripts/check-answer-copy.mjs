@@ -1,14 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { cleanEditorialCopy, splitEditorialAnswer, sentenceSegments, firstSentence, lastSentence, firstParagraph, spokenParagraph, deliverGroundedParagraph } from '../components/terra-voice/answer-copy.ts';
+import { splitEditorialAnswer, sentenceSegments, firstSentence, lastSentence, firstParagraph, spokenParagraph, deliverGroundedParagraph } from '../components/terra-voice/answer-copy.ts';
 
-test('keeps the Angkor explanation and removes the voice-check preamble', () => {
-  const subject = 'Angkor Wat is in northwestern Cambodia, within the Angkor Archaeological Park near Siem Reap.';
-  assert.equal(cleanEditorialCopy('Yes—I can hear you. '+subject), subject);
-  assert.deepEqual(splitEditorialAnswer('Yes—I can hear you. '+subject), {lead:subject,detail:''});
-});
-test('preserves mic-only replies, meaningful agreement and quoted dialogue', () => {
-  for (const text of ['Yes—I can hear you.', 'I can hear you clearly.', 'Yes, Angkor Wat is in Cambodia.', '“I can hear you,” says the character. The scene is about distance.']) assert.equal(cleanEditorialCopy(text), text);
+test('presentation preserves all prose; response routing owns conversation separation', () => {
+  for (const text of ['Yes—I can hear you. Angkor Wat is in Cambodia.', 'I can hear you clearly.', 'Yes, Angkor Wat is in Cambodia.', '“I can hear you,” says the character. The scene is about distance.']) {
+    assert.deepEqual(splitEditorialAnswer(text), {lead:text,detail:''});
+    assert.equal(spokenParagraph(text), text);
+  }
 });
 test('lead is a complete paragraph and More detail contains only subsequent paragraphs', () => {
   const lead = 'First fact. Second fact. Third fact.';
@@ -38,7 +36,15 @@ test('caption segments preserve streaming partial text and paragraph spacing', (
 });
 test('spoken paragraph retains all prose while excluding URL destinations and citation syntax', () => {
   const text = 'Yes—I can hear you. **Angkor Wat** is near [Siem Reap](https://example.com/source). It has five central towers. citesource0\n\nMore context.';
-  assert.equal(spokenParagraph(text),'Angkor Wat is near Siem Reap. It has five central towers.');
+  assert.equal(spokenParagraph(text),'Yes—I can hear you. Angkor Wat is near Siem Reap. It has five central towers.');
+});
+test('spoken paragraph omits raw URLs embedded in prose and at paragraph end', () => {
+  const text = 'The U.S. figures are independently published (https://example.com/report?year=2026), according to Dr. Lee. Learn more: https://example.org/summary.\n\nA later paragraph.';
+  assert.equal(spokenParagraph(text), 'The U.S. figures are independently published, according to Dr. Lee. Learn more.');
+});
+test('spoken paragraph keeps markdown link labels while omitting adjacent raw URLs', () => {
+  const text = 'Compare [NASA Earthdata](https://earthdata.nasa.gov/) with the raw dataset (https://example.org/raw-data), then review the full paragraph.';
+  assert.equal(spokenParagraph(text), 'Compare NASA Earthdata with the raw dataset, then review the full paragraph.');
 });
 test('validated readout sends the full grounded paragraph exactly once per delivery', () => {
   const calls=[],say=(...args)=>calls.push(args),controller=new AbortController();
@@ -50,7 +56,7 @@ test('validated readout sends the full grounded paragraph exactly once per deliv
 });
 test('aborted, stale and empty readouts never start speech', () => {
   const calls=[],say=(...args)=>calls.push(args),controller=new AbortController();
-  assert.equal(deliverGroundedParagraph(say,null,'A fact.',{signal:controller.signal,isCurrent:()=>false}),false);
+  assert.equal(deliverGroundedParagraph(say,null,'A fact with a source https://example.com/source.',{signal:controller.signal,isCurrent:()=>false}),false);
   assert.equal(deliverGroundedParagraph(say,null,' ',{signal:controller.signal,isCurrent:()=>true}),false);
   controller.abort();
   assert.equal(deliverGroundedParagraph(say,null,'A fact.',{signal:controller.signal,isCurrent:()=>true}),false);

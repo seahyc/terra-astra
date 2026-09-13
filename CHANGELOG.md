@@ -179,3 +179,11 @@ For rollback, select the known saved Sites version and redeploy it when authoriz
 - Preserves full opening paragraphs in the answer and transcript, narrates the grounded paragraph once before model/camera completion, and hides background introductory copy under the answer.
 - Busy answer retries preserve the generation allowance; rejected throttled requests report Retry-After. Excludes generated files and alternate worktrees from lint.
 - Includes the rebased main branch through ab8eb4d. Prior published milestones are preserved. Public five-question baseline and focused regressions are documented; post-deployment verification is separate from physical microphone/audio testing.
+
+
+## v0.8.5 — 2026-09-13 — Room for the explanation
+- Consume the integration CSS module through a local class so production retains answer/intro visibility and dock-aware control positioning.
+- Replace empty image-loading frames with a compact status row; preserve bounded images and mobile scrolling after completion.
+- Separate conversation replies and subject articles in the generation contract instead of deleting phrases from rendered text. Pure dialogue has no article; mixed questions retain subject prose verbatim.
+- Render bare source URLs as short source links, request descriptive inline citations, and omit raw URLs from spoken paragraphs. Clear stale model status when following answer-location controls.
+- Public v0.8.4 returned the expected answer and map/model controls for all five requested questions, with no observed repeat throttling. Browser tooling resets split that sequence; final v0.8.5 verification is recorded separately.

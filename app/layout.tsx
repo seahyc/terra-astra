@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Terra Astra — Earth, Constellated",
-  description: "An Earth drawn in stars. Explore the planet, descend into Singapore, and discover that the constellation was us all along.",
+  description: "Ask Earth questions by voice, explore geography at every scale, and follow sourced answers with live visual explanations.",
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",

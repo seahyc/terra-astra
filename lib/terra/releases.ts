@@ -1,9 +1,19 @@
 /** User-facing release history. Keep historical entries tied to their saved milestones. */
-export const currentVersion = '0.8.4';
+export const currentVersion = '0.8.5';
 
 export const releases = [
   {
-    version: '0.8.4', date: '2026-09-13', dateLabel: '13 September 2026', title: 'Follow every question', milestone: 'This build',
+    version: '0.8.5', date: '2026-09-13', dateLabel: '13 September 2026', title: 'Room for the explanation', milestone: 'This build',
+    changes: [
+      'Restores production integration styles so the opening and globe controls make room for the answer and transcript.',
+      'Generated visuals use a compact loading row and expand only when the image arrives.',
+      'Conversation replies and subject explanations have separate response fields. Greetings stay in the conversation; complete subject paragraphs stay in the answer.',
+      'Source links have readable labels, and spoken paragraphs omit raw web addresses. Location controls clear obsolete model status.',
+    ],
+    review: 'All five requested questions returned the expected explanations and model or map controls on public v0.8.4. Browser tooling resets split that rerun; only the first two had screenshot evidence. This patch includes focused router, paragraph, TypeScript and production-style checks; final deployed sequence evidence is recorded separately.',
+  },
+  {
+    version: '0.8.4', date: '2026-09-13', dateLabel: '13 September 2026', title: 'Follow every question', milestone: 'Previous release',
     changes: [
       'Location searches frame the places in the answer and offer named location controls. Unlocated models no longer inherit the preceding question’s country.',
       'New York street questions find the grid model in either word order. Java trench and Singapore port explanations use relevant reviewed source evidence.',
