@@ -12,7 +12,8 @@ export function genesisState(progress:number):GenesisState{
 }
 export function genesisLight(progress:number){
  const p=Math.max(0,Math.min(1,progress)),flash=Math.exp(-Math.pow((p-.344)/.009,2));
- return {exposure:(.16+.84*ramp(.36,.67,p))*(1+flash*2.8),size:.60+.40*ramp(.36,.74,p)+flash*.36,flash,settled:ramp(.82,1,p)};
+ const burstExposure=1+2.6*ramp(.36,.40,p)*(1-ramp(.55,.68,p));
+ return {exposure:Math.min(2.7,(.16+.84*ramp(.36,.67,p))*burstExposure)*(1+flash*2.8),size:.60+.40*ramp(.36,.74,p)+flash*.36,flash,settled:ramp(.82,1,p)};
 }
 /** Reusable output, exact home endpoint. id is a stable buffer index plus cloud offset. */
 export function genesisPosition(x:number,y:number,z:number,id:number,phase:number,progress:number,out:THREE.Vector3){

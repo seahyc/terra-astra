@@ -17,10 +17,11 @@ registerHooks({ resolve(specifier, context, next) {
 let clock = 0, frame = null, resizeCallback = null;
 const noop = () => {};
 const ctx = new Proxy({ createRadialGradient: () => ({ addColorStop: noop }) }, { get: (o, key) => o[key] ?? noop, set: (o, key, value) => { o[key] = value; return true; } });
+let graphicsLostCallback=null;
 class Canvas {
   style = {}; width = 1; height = 1;
   getContext(type) { return type === '2d' ? ctx : null; }
-  addEventListener() {} removeEventListener() {} setAttribute() {} remove() {}
+  addEventListener(type,callback) {if(type==='webglcontextlost')graphicsLostCallback=callback;} removeEventListener() {} setAttribute() {} remove() {}
 }
 globalThis.document = { hidden: false, createElement: () => new Canvas(), createElementNS: () => new Canvas(), addEventListener: noop, removeEventListener: noop };
 globalThis.window = { devicePixelRatio: 1, innerWidth: 1363 };
@@ -42,7 +43,7 @@ CanvasStarRenderer.prototype.render = (scene, camera) => { rendered = { scene, c
 const { createEarth } = await import('../lib/terra/engine.ts');
 const engine = await createEarth(host, { querySelector: () => null }, {
   genesis:s=>genesisStates.push(s),worldState:s=>worldStates.push(s),ready: noop, coordinates: noop, interact: noop, arrival: noop,
-  stage: s => stages.push(s), transformation: state => states.push(state), personalSettled: () => personalArrivals++, error: message => assert.fail(message),
+  stage: s => stages.push(s), transformation: state => states.push(state), personalSettled: () => personalArrivals++, error: message => {if(!message.includes('Graphics became unavailable'))assert.fail(message);},
 }, new AbortController().signal);
 
 const tick=(ms=60)=>{clock+=ms;const next=frame;frame=null;assert.ok(next);next(clock);};
@@ -71,8 +72,11 @@ await complete({type:'flyTo',targetId:'singapore'});assert.equal(engine.worldSta
 const singaporePose=rendered.camera.position.clone();await complete({type:'highlightTarget',targetId:'new-york'});assert.equal(engine.worldState().targetId,'singapore','Highlight does not replace active camera target');engine.rotate(10,0);tick();assert.ok(rendered.camera.position.distanceTo(singaporePose)<.0001,'Highlight another city does not change camera bounds or snap across Earth');assert.ok(objects().filter(o=>o.userData.urban==='singapore').every(o=>o.visible),'Highlight preserves current city activity');
 engine.select('amina');tick();engine.orbit();tick();assert.equal(stages.at(-1),'orbit');
 await complete({type:'flyTo',targetId:'challenger-deep'});assert.equal(engine.worldState().tier,'region');assert.equal(engine.worldState().targetId,'challenger-deep');assert.ok(rendered.camera.position.length()>1.19);
+engine.view('cutaway');tick();assert.equal(engine.worldState().targetId,'challenger-deep');assert.ok(Math.abs(Math.atan2(rendered.camera.position.y,Math.hypot(rendered.camera.position.x,rendered.camera.position.z))*180/Math.PI-11.369)<.01,'View change retains Challenger target');assert.ok(Math.abs(rendered.camera.position.length()-1.20)<1e-6);engine.view('globe');tick();host.clientWidth=800;host.clientHeight=600;resizeCallback();tick();assert.ok(Math.abs(rendered.camera.position.length()-1.20)<1e-6,'Idle region resize preserves altitude');
 assert.equal((await complete({type:'setScale',tier:'street'})).ok,false,'Unsupported trench street scale rejected');assert.equal(engine.worldState().tier,'region');
 await complete({type:'resetView'});assert.equal(engine.worldState().targetId,null);assert.equal(engine.worldState().tier,'planet');
 assert.equal((await complete({type:'flyTo',targetId:'missing'})).ok,false);
+engine.configure({...baseOptions,motion:true});const flight=engine.command({type:'flyTo',targetId:'challenger-deep'});for(let i=0;i<5;i++){await Promise.resolve();tick(100);}host.clientWidth=390;host.clientHeight=844;resizeCallback();for(let i=0;i<80;i++){tick(100);await Promise.resolve();}assert.equal((await flight).ok,true);assert.ok(Math.abs(rendered.camera.position.length()-1.20)<1e-6,'In-flight regional resize retains its intended altitude');engine.region('indonesia');assert.equal(engine.worldState().targetId,null,'Explicit depth preset clears old command target');
+const lostCommand=engine.command({type:'flyTo',targetId:'singapore'});for(let i=0;i<6;i++){await Promise.resolve();tick(100);}assert.ok(graphicsLostCallback);graphicsLostCallback({preventDefault(){}});assert.equal((await lostCommand).ok,false,'Graphics loss settles active command');assert.equal((await engine.command({type:'resetView'})).ok,false,'Graphics loss rejects later commands');
 engine.dispose();assert.equal(frame,null);
 console.log('PASS: distinct orbital/aircraft shells with trails; real pause of positions; layer toggles; serialized target/scale commands; sourced NYC detail and activity; SG return; Mariana region; reset; invalid command. Inert Canvas lifecycle, not pixel/performance evidence.');
