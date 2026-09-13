@@ -13,6 +13,8 @@ import { classifyTelemetryError, downloadTelemetryReport, navigationTurnOutcome,
 import { catalogueTargetIdInQuestion, executeLiveNavigation, planLiveNavigation } from './world-navigator';
 import { suggestedPerspective } from './world-navigator';
 import AnswerImage from './AnswerImage';
+import { deliverGroundedParagraph, spokenParagraph, sentenceSegments, splitEditorialAnswer } from './answer-copy';
+import { modelLocation, overviewLocation, prefersGeographicOverview } from './model-view.mjs';
 import { matchLibrary, validateLibraryModel } from '../../lib/terra/model-library/library.mjs';
 
 type Props = { ready: boolean; onAskReady: (ask: ((question: string) => void) | null) => void };
@@ -21,11 +23,6 @@ function catalogueTarget(target: GeneratedWorldTarget): CatalogueWorldTarget | n
   const name = target.name.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
   if (name === 'mariana trench') return WORLD_TARGETS.find(item => item.id === 'challenger-deep') ?? null;
   return WORLD_TARGETS.find(item => item.label.toLowerCase() === name) ?? null;
-}
-
-function lastSentence(text: string): string {
-  const sentences = text.match(/[^.!?]+[.!?]+(?:\s|$)|[^.!?]+$/g);
-  return sentences?.at(-1)?.trim() ?? text.trim();
 }
 
 function answerWithLinks(text: string) {
@@ -70,16 +67,6 @@ function answerSubtitle(world: WorldAnswer | null, navigationState: WorldState |
   return hasAnswer ? 'Astra’s answer' : 'A live field note';
 }
 
-function splitEditorialAnswer(text: string) {
-  if (!text) return { lead: '', detail: '' };
-  const sentences = [...text.matchAll(/[^.!?]+[.!?]+(?:\s|$)|[^.!?]+$/g)].slice(0, 2);
-  let end = sentences.length ? (sentences.at(-1)?.index ?? 0) + (sentences.at(-1)?.[0].length ?? 0) : text.length;
-  const clipped = end > 360;
-  if (clipped) end = Math.max(1, text.lastIndexOf(' ', 357));
-  const lead = `${text.slice(0, end).trim()}${clipped ? '…' : ''}`;
-  return { lead, detail: text.slice(end).trim() };
-}
-
 export default function GlobeVoice({ ready, onAskReady }: Props) {
   const [voiceStatus, setVoiceStatus] = useState('off');
   const [playbackState, setPlaybackState] = useState<PlaybackState>('idle');
@@ -104,6 +91,7 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
   const activeTurnRef = useRef<string | null>(null);
   const imageAbortRef = useRef<AbortController | null>(null);
   const modelAbortRef = useRef<AbortController | null>(null);
+  const locationAbortRef = useRef<AbortController | null>(null);
   const modelTelemetryRef = useRef<{ turnId: string; started: number } | null>(null);
   const imageTelemetryRef = useRef<{ turnId: string; started: number } | null>(null);
   const dockRef = useRef<HTMLElement | null>(null);
@@ -111,10 +99,16 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
   const voiceFirstRef=useRef<string|null>(null);
   const emphasize = useCallback((text: string) => {
     const turn=activeTurnRef.current;if(turn&&voiceFirstRef.current!==turn){voiceFirstRef.current=turn;telemetry.record('voice.response',{phase:'first_transcript'},turn);}
-    const phrases=text.match(/[^.!?]+[.!?]+(?:\s|$)|[^.!?]+$/g)??[text];
-    setSpokenCaption(phrases.at(-1)?.trim()??text);
+    const phrases=sentenceSegments(text);
+    setSpokenCaption(text.trim());
     const phrase=(phrases.at(-1)??text).toLowerCase();const part=getWorldState()?.proceduralModel?.parts?.find(p=>phrase.includes(p.label.toLowerCase()));if(part)void sendWorldCommand({type:'focusModelPart',id:part.id});
   }, []);
+  const viewLocation = (target: GeneratedWorldTarget) => {
+    locationAbortRef.current?.abort();
+    const controller = new AbortController(); locationAbortRef.current = controller;
+    void executeLiveNavigation({ commands: [{type:'clearProceduralModel'},{type:'flyToLocation',...target},{type:'setPerspective',perspective:'aerial'}], acknowledgement:'',context:'' }, {signal:controller.signal})
+      .then(result => { if (!controller.signal.aborted && !result.ok) setError(result.reason ?? 'This location could not be shown.'); });
+  };
   const ask = useCallback(async (question: string, delegationId?: string, preferredId?: string) => {
     if (!ready || !question.trim()) return;
     if (active.current && activeTurnRef.current) telemetry.record('turn.cancelled', { reason: 'superseded' }, activeTurnRef.current);
@@ -122,6 +116,7 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
     if (modelTelemetryRef.current) telemetry.record('model.lifecycle', { phase: 'cancelled', duration_ms: performance.now() - modelTelemetryRef.current.started }, modelTelemetryRef.current.turnId);
     const id = ++revision.current;
     active.current?.abort();
+    locationAbortRef.current?.abort();
     imageAbortRef.current?.abort(); imageAbortRef.current = null;
     modelAbortRef.current?.abort(); modelAbortRef.current = null;
     modelTelemetryRef.current = null;
@@ -153,6 +148,9 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
         }
       } });
     };
+    let cancelModel = () => {};
+    let resolveAnswerTarget: () => void = () => {};
+    const answerTargetReady = new Promise<void>(resolve => { resolveAnswerTarget = resolve; });
     try {
       const navigationPlan = navigationState && !preferredId ? planLiveNavigation(question) : null;
       if (navigationPlan) {
@@ -173,35 +171,37 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
         return;
       }
       setProgress('Thinking…');
+      const mapOverview = !preferredId && prefersGeographicOverview(question);
+      const prepared = mapOverview ? null : matchLibrary(question);
       const queryTargetId = navigationState ? catalogueTargetIdInQuestion(question) : null;
       const initialPerspective = navigationState ? suggestedPerspective(question) : null;
       const queryTarget = queryTargetId ? WORLD_TARGETS.find(item => item.id === queryTargetId) ?? null : null;
-      const initialJourney = queryTarget
+      const initialJourney = queryTarget && !prepared?.anchor
         ? navigate({ commands: [{ type: 'flyTo', targetId: queryTarget.id }], acknowledgement: '', context: '' })
         : null;
-      const initialPerspectiveJourney = initialPerspective && navigationState?.perspective !== initialPerspective
+      const initialPerspectiveJourney = !prepared?.anchor && initialPerspective && navigationState?.perspective !== initialPerspective
         ? (async () => {
             const journey = initialJourney ? await initialJourney : null;
             if (journey && !journey.ok) return journey;
             return navigate({ commands: [{ type: 'setPerspective', perspective: initialPerspective }], acknowledgement: '', context: '' });
           })()
         : null;
-      live.current?.say(delegationId ?? null, `Answer the central idea of this question now in two short sentences from stable knowledge: ${question}. Grounded details and a model are being prepared concurrently; do not claim a model is visible or invent measurements.`);
-      const prepared = matchLibrary(question);
-      const wantsModel = Boolean(preferredId || prepared || /\b(model|3d|structure|architecture|mechanism|engine|pump|turbine|bridge|volcano|building|machine|works?|inside|shape|anatomy|robot|satellite|heart|lighthouse|gear|telescope)\b/i.test(question));
-      let resolvedModelTarget: GeneratedWorldTarget | undefined;
+
+      const wantsModel = !mapOverview && Boolean(preferredId || prepared || /\b(model|3d|structure|architecture|mechanism|engine|pump|turbine|bridge|volcano|building|machine|works?|inside|shape|anatomy|robot|satellite|heart|lighthouse|gear|telescope)\b/i.test(question));
+      let resolvedModelTarget: GeneratedWorldTarget | undefined = undefined;
       let modelPromise: Promise<void> | null = null;
       const startModel = () => {
-        const modelController = new AbortController(); modelAbortRef.current=modelController;
+        const modelController = new AbortController(); modelAbortRef.current=modelController; cancelModel = () => modelController.abort();
         const modelSignal=AbortSignal.any([controller.signal,modelController.signal]);
         const modelStarted=performance.now(); modelTelemetryRef.current={turnId,started:modelStarted};
         telemetry.record('model.lifecycle',{phase:'requested'},turnId);setModelStatus({title:prepared?.title??'model',phase:'building'});
         return (async()=>{
           const response=await fetch('/api/terra/library-model',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:question,...(preferredId?{preferredId}:{})}),signal:modelSignal});
           if(!response.ok)throw new Error('Model unavailable');const payload=z.object({recipe:z.unknown(),via:z.string(),persisted:z.boolean()}).parse(await response.json());const recipe=validateLibraryModel(payload.recipe);
+          if (!recipe.anchor && !queryTarget) await answerTargetReady;
           if(initialJourney)await initialJourney;if(initialPerspectiveJourney)await initialPerspectiveJourney;
           if(id!==revision.current||modelSignal.aborted)return;
-          const state=getWorldState();const anchor=recipe.anchor?{...recipe.anchor,span:12}:resolvedModelTarget??(queryTarget?{name:queryTarget.label,latitude:queryTarget.lat,longitude:queryTarget.lon,span:12}:state?.location??null);
+          const anchor=modelLocation(recipe,resolvedModelTarget,queryTarget?{name:queryTarget.label,latitude:queryTarget.lat,longitude:queryTarget.lon}:null);
           const commands:WorldCommand[]=[];
           if(anchor)commands.push({type:'flyToLocation',...anchor});
           else {const coordinates=prepared?.anchor; if(coordinates)commands.push({type:'flyToLocation',...coordinates,span:12});}
@@ -240,10 +240,12 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
       if (!result.measured) throw new Error('The explanation was empty. Please try again.');
       telemetry.record('answer.result', { model: result.measured.model, route: result.measured.route, subagent_count: result.measured.subagent_count, server_elapsed_ms: result.measured.elapsed_ms, duration_ms: performance.now() - answerStarted }, turnId);
       const explanation = result.measured.output.replace(/\*\*|^[-#]\s/gm,'').replace(/cite[^]+/g, '');
+      deliverGroundedParagraph((delegation, content) => live.current?.say(delegation, content), delegationId ?? null, explanation, {signal: controller.signal, isCurrent: () => id === revision.current});
       setAnswer(explanation); setSources(result.sources ?? []); setProgress('');
       if (result.world) setWorld(result.world);
       resolvedModelTarget=result.world?.targets[0];
-      if(!modelPromise && result.world?.modelBrief)modelPromise=startModel();
+      resolveAnswerTarget();
+      if(!mapOverview && !modelPromise && result.world?.modelBrief)modelPromise=startModel();
       if (result.world?.imageBrief) {
         const brief = result.world.imageBrief;
         const imageController = new AbortController();
@@ -281,11 +283,11 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
         if (!navigation.ok) { navigationFailed(); return; }
       }
       if (result.world) {
-        const target = result.world.targets[0];
+        const target = mapOverview ? overviewLocation(result.world.targets) : result.world.targets[0];
         const supported = target ? catalogueTarget(target) : null;
         if (!modelPromise && target && (!supported || supported.id !== queryTarget?.id) && navigationState) {
           const command: WorldCommand = supported ? { type:'flyTo',targetId:supported.id } : { type:'flyToLocation', ...target };
-          const navigation = await navigate({ commands: [command], acknowledgement: '', context: '' });
+          const navigation = await navigate({ commands: [{ type: 'clearProceduralModel' },command], acknowledgement: '', context: '' });
           if (!navigation.ok) { navigationFailed(); return; }
         }
       }
@@ -295,15 +297,17 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
         if (!navigation.ok) { navigationFailed(); return; }
       }
       if (id !== revision.current || controller.signal.aborted) return;
-      const finalPerspective = modelPromise ? null : result.world?.perspective;
+      const finalPerspective = modelPromise ? null : mapOverview ? 'aerial' : result.world?.perspective;
       if (finalPerspective && getWorldState()?.perspective !== finalPerspective) {
         const navigation = await navigate({ commands: [{ type: 'setPerspective', perspective: finalPerspective }], acknowledgement: '', context: '' });
         if (!navigation.ok) { navigationFailed(); return; }
       }
       if (id !== revision.current || controller.signal.aborted) return;
-      live.current?.context(`Grounded backend answer for the current question: ${explanation}. Use this to correct any material discrepancy in your first explanation, without repeating it.`);
+
       if(modelPromise)await modelPromise;
     } catch (e) {
+      cancelModel();
+      resolveAnswerTarget();
       if (id !== revision.current || controller.signal.aborted) return;
       turnOutcome = 'error';
       telemetry.record('turn.error', { error_kind: classifyTelemetryError(e, caughtErrorKind, lastHttpStatus) }, turnId);
@@ -311,6 +315,7 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
       setError(message); setProgress('');
       live.current?.say(delegationId ?? null, `Tell the user briefly: ${message}`);
     } finally {
+      resolveAnswerTarget();
       const interrupted = id !== revision.current || controller.signal.aborted;
       telemetry.record('turn.finished', { outcome: interrupted ? (controller.signal.aborted ? 'cancelled' : 'stale') : turnOutcome }, turnId);
       if (id === revision.current) { setBusy(false); active.current = null; activeTurnRef.current = null; }
@@ -325,7 +330,7 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
       onDelegation:({id,query}) => askRef.current(query,id),
     });
     live.current = controller;
-    return () => { if (activeTurnRef.current) telemetry.record('turn.cancelled', { reason: 'unmount' }, activeTurnRef.current); if (imageAbortRef.current && imageTelemetryRef.current) telemetry.record('image.lifecycle', { phase: 'cancelled', duration_ms: performance.now() - imageTelemetryRef.current.started }, imageTelemetryRef.current.turnId); if (modelTelemetryRef.current) telemetry.record('model.lifecycle', { phase: 'cancelled', duration_ms: performance.now() - modelTelemetryRef.current.started }, modelTelemetryRef.current.turnId); revision.current++; active.current?.abort(); imageAbortRef.current?.abort(); modelAbortRef.current?.abort(); controller.dispose(); live.current = null; };
+    return () => { if (activeTurnRef.current) telemetry.record('turn.cancelled', { reason: 'unmount' }, activeTurnRef.current); if (imageAbortRef.current && imageTelemetryRef.current) telemetry.record('image.lifecycle', { phase: 'cancelled', duration_ms: performance.now() - imageTelemetryRef.current.started }, imageTelemetryRef.current.turnId); if (modelTelemetryRef.current) telemetry.record('model.lifecycle', { phase: 'cancelled', duration_ms: performance.now() - modelTelemetryRef.current.started }, modelTelemetryRef.current.turnId); revision.current++; active.current?.abort(); locationAbortRef.current?.abort(); imageAbortRef.current?.abort(); modelAbortRef.current?.abort(); controller.dispose(); live.current = null; };
   }, [emphasize]);
   useEffect(() => {
     return subscribeWorldState(setNavigationState);
@@ -352,29 +357,28 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
     void sendWorldCommand({ type: 'cancelWorldTurn' }).catch(() => {});
     imageTelemetryRef.current = null;
     if (busy) setAnswer('');
-    setOpening(''); setSpokenCaption(''); setAnswerImage(null); setModelStatus(null); setRows(current => current.filter(row => row.who === 'user').slice(-1));
+    setOpening(''); setAnswerImage(null); setModelStatus(null); setRows(current => current.filter(row => row.who === 'user').slice(-1));
     setBusy(false); setProgress(''); live.current?.stop();
   };
-  const liveRows = rows.filter(row => row.text.trim()).slice(-2);
   const latestUserIndex = rows.findLastIndex(row => row.who === 'user');
   const latestUserText = latestUserIndex >= 0 ? rows[latestUserIndex].text.trim() : '';
   const hasNewLiveUser = latestUserIndex > transcriptBaseline.userIndex || (latestUserIndex === transcriptBaseline.userIndex && latestUserText !== transcriptBaseline.userText);
   const latestUser = isOn && hasNewLiveUser ? latestUserText : '';
-  const latestAssistant = isOn ? [...liveRows].reverse().find(row => row.who === 'assistant')?.text.trim() : '';
   const userCaption = latestUser || questionText;
-  const agentCaption = isOn && spokenCaption ? spokenCaption : latestAssistant ? lastSentence(latestAssistant) : (answer || opening).match(/^.*?[.!?](?:\s|$)/)?.[0] || (answer || opening);
+  const agentCaption = spokenCaption || spokenParagraph(answer || opening);
   const showEditorial = Boolean(questionText || answer || opening || progress || answerImage || error);
   const editorialTitle = world?.title || (busy ? 'Reading the world' : questionText ? 'Astra’s field note' : 'Ask the Earth');
   const subtitle = answerSubtitle(world, navigationState, Boolean(answer), progress);
   const visibleVoiceStatus = isOn && voiceStatus !== 'started' ? voiceStatusLabel(voiceStatus) : '';
   const editorialAnswer = splitEditorialAnswer(answer || opening);
-  const detailedAnswer = answer.length > 140 ? answer : editorialAnswer.detail;
+  const detailedAnswer = editorialAnswer.detail;
   return <>
-  {showEditorial && <aside className={styles.editorial} aria-live="polite" aria-label="Astra’s answer">
+  {showEditorial && <aside className={styles.editorial} data-answer-panel="true" aria-live="polite" aria-label="Astra’s answer">
     <header><p>{subtitle}</p><h2>{editorialTitle}</h2></header>
     {busy && !answer && <div className={styles.editorialLoading} role="status"><span/><span/><span/><small>{progress || 'Thinking'}</small></div>}
     {editorialAnswer.lead && <div className={styles.editorialCopy}>{answerWithLinks(editorialAnswer.lead)}</div>}
     {answerImage && <AnswerImage title={answerImage.title} imageUrl={answerImage.imageUrl} loading={answerImage.loading} error={answerImage.error}/>}
+    {world && world.targets.length > 1 && <div className={styles.parts} aria-label="Answer locations">{world.targets.map(target=><button key={`${target.name}:${target.latitude}:${target.longitude}`} type="button" disabled={busy || navigationState?.busy} onClick={()=>viewLocation(target)}>{target.name}</button>)}</div>}
     {navigationState?.proceduralModel?.parts && <div className={styles.parts} aria-label="Model parts">{navigationState.proceduralModel.parts.map(part=><button key={part.id} type="button" onClick={()=>void sendWorldCommand({type:'focusModelPart',id:part.id})}>{part.label}</button>)}<button type="button" onClick={()=>void sendWorldCommand({type:'focusModelPart',id:null})}>All parts</button></div>}
     {modelStatus && <p className={styles.modelStatus} role="status">{modelStatus.phase === 'building' ? `Shaping ${modelStatus.title}…` : modelStatus.phase === 'ready' ? `${modelStatus.title} is now on the globe.${modelStatus.persisted === false ? ' Library saving is unavailable for this model.' : ''}` : `The ${modelStatus.title} model was unavailable.`}</p>}
     {modelStatus?.phase==='ready' && <details className={styles.modelEvidence}><summary>About this model</summary><p>{modelStatus.measured?'121 checked-in NOAA ETOPO samples along 112.922°E. Horizontal distance: km; elevation: m. Highest sample +984 m, lowest −5,361 m. These are transect samples, not summit or deepest-trench measurements; axes are scaled independently.':'Conceptual geometry with validated shapes and bounds. Dimensions and motion explain the subject; they are not surveyed measurements or independent factual verification.'}</p></details>}

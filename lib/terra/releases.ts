@@ -1,9 +1,19 @@
 /** User-facing release history. Keep historical entries tied to their saved milestones. */
-export const currentVersion = '0.8.3';
+export const currentVersion = '0.8.4';
 
 export const releases = [
   {
-    version: '0.8.3', date: '2026-09-13', dateLabel: '13 September 2026', title: 'Keep the conversation going', milestone: 'This build',
+    version: '0.8.4', date: '2026-09-13', dateLabel: '13 September 2026', title: 'Follow every question', milestone: 'This build',
+    changes: [
+      'Location searches frame the places in the answer and offer named location controls. Unlocated models no longer inherit the preceding question’s country.',
+      'New York street questions find the grid model in either word order. Java trench and Singapore port explanations use relevant reviewed source evidence.',
+      'The answer and transcript retain a complete opening paragraph. Voice reads the grounded paragraph when ready, with interruption support, and background introduction text stays out of the answer panel.',
+      'Busy-answer retries no longer spend the generation allowance. This release also incorporates the updated main branch.',
+    ],
+    review: 'The public v0.8.3 five-question sequence exposed location, measurement-scope, transport-grounding and retry issues. Regression checks exercise these boundaries; post-deployment checks are recorded separately. Physical microphone and audio audition remain separate from automated paragraph-delivery checks.',
+  },
+  {
+    version: '0.8.3', date: '2026-09-13', dateLabel: '13 September 2026', title: 'Keep the conversation going', milestone: 'Previous release',
     changes: [
       'When a browser blocks voice playback, Enable audio resumes sound from a direct tap while keeping the current voice connection and transcript.',
       'Voice playback is prepared during the microphone-button gesture, and Stop clears any pending playback recovery.',

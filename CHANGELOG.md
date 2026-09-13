@@ -172,3 +172,10 @@ For rollback, select the known saved Sites version and redeploy it when authoriz
 - Adds a compact Enable audio / Retry audio action that calls playback directly from the user gesture, including while an answer is being prepared.
 - Primes the same audio element during voice startup and prevents stale playback attempts from changing a stopped or replaced session.
 - Validation includes controller regression checks and isolated browser recovery using a synthetic MediaStream; no physical-microphone or public audio audition is claimed.
+
+## v0.8.4 — 2026-09-13 — Follow every question
+- Fixes the Angkor → US data-center follow-up retaining Cambodia: location searches use a fitted map overview with named location controls, and unlocated models await the current answer target.
+- Recognizes New York street geometry regardless of word order. Supplies reviewed Java trench survey depth separately from the displayed transect; grounds Singapore terminal logistics without inventing rail freight.
+- Preserves full opening paragraphs in the answer and transcript, narrates the grounded paragraph once before model/camera completion, and hides background introductory copy under the answer.
+- Busy answer retries preserve the generation allowance; rejected throttled requests report Retry-After. Excludes generated files and alternate worktrees from lint.
+- Includes the rebased main branch through ab8eb4d. Prior published milestones are preserved. Public five-question baseline and focused regressions are documented; post-deployment verification is separate from physical microphone/audio testing.

@@ -43,3 +43,19 @@ test('invalid coordinates do not reach the renderer',async()=>{
   const answer=createAnswerRouter({worldAnswerSchema,runProbe:()=>assert.fail('Invalid'),fetchImpl:async()=>response({route:'quick',needsWeb:false,answer:{...world,targets:[{name:'Bad',latitude:999,longitude:0,span:8}]}})});
   await assert.rejects(answer(input));
 });
+
+test('relevant surveyed depth reaches quick answers and used citations survive',async()=>{
+  const source='https://nora.nerc.ac.uk/id/eprint/530930/';
+  const answer=createAnswerRouter({worldAnswerSchema,runProbe:()=>assert.fail('No research needed'),fetchImpl:async(url,init)=>{
+    const body=JSON.parse(init.body), request=JSON.parse(body.input);
+    assert.equal(request.relevant_evidence.java_trench.survey.maximum_depth_m,7187);
+    assert.match(body.instructions,/section minimum cannot answer/);
+    return response({route:'quick',needsWeb:false,answer:{...world,explanation:`The surveyed depth is 7,187 metres. [Survey](${source})`}});
+  }});
+  const result=await answer({...input,question:'How deep is the Java trench?'});
+  assert.deepEqual(result.sources.map(s=>s.url),[source]);
+});
+test('unused supplied sources are never attached to an answer',async()=>{
+  const answer=createAnswerRouter({worldAnswerSchema,runProbe:()=>assert.fail('No research needed'),fetchImpl:async()=>response({route:'quick',needsWeb:false,answer:world})});
+  assert.deepEqual((await answer({...input,question:'How does Singapore move shipping containers?'})).sources,[]);
+});

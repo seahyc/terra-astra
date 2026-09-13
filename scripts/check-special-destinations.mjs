@@ -1,7 +1,7 @@
 // Exercise the real engine lifecycle with a deterministic clock and inert Canvas surface.
 // This verifies behavior and geography, not rendered pixels or browser performance.
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import { registerHooks } from 'node:module';
 import * as THREE from 'three';
 
@@ -27,7 +27,8 @@ globalThis.Path2D = class { moveTo() {} lineTo() {} };
 globalThis.requestAnimationFrame = callback => { frame = callback; return 1; };
 globalThis.cancelAnimationFrame = () => { frame = null; };
 Object.defineProperty(globalThis, 'performance', { value: { now: () => clock } });
-globalThis.fetch = async path => new Response(await readFile(new URL('../public' + path, import.meta.url)));
+// Load the actual fixture before yielding: virtual animation time must not race disk I/O.
+globalThis.fetch = async path => new Response(readFileSync(new URL('../public' + path, import.meta.url)));
 const host = { clientWidth: 1363, clientHeight: 936, dataset: {}, appendChild: noop, addEventListener: noop, removeEventListener: noop };
 const stages = [], states = [], genesisStates=[], worldStates=[], views=[];let personalArrivals=0;
 let rendered = null;

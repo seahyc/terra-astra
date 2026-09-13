@@ -32,7 +32,7 @@ test('stream sends opening then validated result without filesystem reporting', 
   assert.equal(events.at(-1).result.measured.subagent_count, 2);
 });
 test('Live returns only session identity and SDP, keeping credentials server-side', async () => {
-  const handle = setup({ fetchImpl: async (_url, init) => { assert.equal(init.headers.Authorization, 'Bearer test-secret'); assert.equal(JSON.parse(init.body).session.audio.output.voice,'ripple'); return Response.json({ session: { id: 'session', secret: 'do-not-return' }, transport: { sdp: 'answer', secret: 'also-private' } }); } });
+  const handle = setup({ fetchImpl: async (_url, init) => { assert.equal(init.headers.Authorization, 'Bearer test-secret'); assert.equal(JSON.parse(init.body).session.audio.output.voice,'ripple'); const instructions=JSON.parse(init.body).session.instructions; assert.match(instructions,/read it verbatim in full exactly once/); assert.match(instructions,/Let the user interrupt at any time/); assert.match(instructions,/without waiting for model construction or camera movement/); assert.doesNotMatch(instructions,/Start each answer immediately with a concise central explanation from stable knowledge/); return Response.json({ session: { id: 'session', secret: 'do-not-return' }, transport: { sdp: 'answer', secret: 'also-private' } }); } });
   const response = await handle(request('/session', { sdp: 'offer' }));
   assert.equal(response.status, 201);
   assert.deepEqual(await response.json(), { session: { id: 'session' }, transport: { type: 'webrtc', sdp: 'answer' } });
@@ -57,4 +57,29 @@ test('procedural models share authentication, origin and request-size gates', as
   assert.equal((await handle(request('/model',input,'https://other.test'))).status,403);
   assert.equal((await handle(request('/model',{...input,query:'x'.repeat(17000)}))).status,413);
   const response=await handle(request('/model',input));assert.equal(response.status,200);assert.equal((await response.json()).recipe.id,'Structure');assert.equal(calls,1);
+});
+
+test('busy answer retries preserve the remaining budget without increasing its limit', async () => {
+  const handle = setup({ runProbe: async ({ signal }) => new Promise((_, reject) => signal.addEventListener('abort', () => reject(new Error('cancelled')), { once: true })) });
+  const first = await handle(request('/answer', { query: 'Earth?' }));
+  for (let i = 0; i < 15; i++) assert.equal((await handle(request('/answer', { query: 'Again?' }))).status, 409);
+  await handle(request('/agents/cancel')); await first.text();
+  for (let i = 0; i < 11; i++) assert.equal((await handle(request('/image'))).status, 200);
+  const limited = await handle(request('/image'));
+  assert.equal(limited.status, 429);
+  assert.ok(Number(limited.headers.get('Retry-After')) >= 1 && Number(limited.headers.get('Retry-After')) <= 60);
+});
+
+test('a body-read race refunds only the rejected answer reservation', async () => {
+  const handle = setup({ runProbe: async ({ signal }) => new Promise((_, reject) => signal.addEventListener('abort', () => reject(new Error('cancelled')), { once: true })) });
+  let finishBody;
+  const delayed = new Request(url + '/answer', { method: 'POST', headers: { Origin: 'https://terra.test' }, duplex: 'half', body: new ReadableStream({ start(sink) { finishBody = () => { sink.enqueue(new TextEncoder().encode(JSON.stringify({ query: 'Delayed?' }))); sink.close(); }; } }) });
+  const waiting = handle(delayed);
+  // Let authorization finish and reserve this request's budget before its body arrives.
+  await new Promise(resolve => setImmediate(resolve));
+  const first = await handle(request('/answer', { query: 'Earth?' }));
+  finishBody(); assert.equal((await waiting).status, 409);
+  await handle(request('/agents/cancel')); await first.text();
+  for (let i = 0; i < 11; i++) assert.equal((await handle(request('/image'))).status, 200);
+  assert.equal((await handle(request('/image'))).status, 429);
 });
