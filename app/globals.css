@@ -200,10 +200,11 @@ html{color-scheme:dark}.story-sheet,.about-dialog,.tuning-dialog{scrollbar-width
  .terra-invitation{bottom:181px}
  .genesis-skip{right:22px;bottom:max(20px,env(safe-area-inset-bottom))}
  .scale-name{font-size:19px}
- .stage-city .scale-navigation{bottom:193px}
+ .stage-city:has(.story-access) .scale-navigation{bottom:230px}
 }
 @media(prefers-reduced-motion:reduce){.world-destinations,.genesis-skip{transition:none}}
 
 .experience:has(.world-explore[aria-expanded=true]) .opening{opacity:0}
 .world-navigation:has(.world-explore[aria-expanded=true]) .world-explore{visibility:hidden}
+.has-story .scale-navigation{display:none}
 @media(max-width:700px){.world-destinations{left:23px;top:83px;max-height:calc(100svh - 235px)}}

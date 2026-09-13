@@ -1,13 +1,28 @@
 /** User-facing release history. Keep historical entries tied to their saved milestones. */
-export const currentVersion = '0.5';
+export const currentVersion = '0.6';
 
 export const releases = [
+  {
+    version: '0.6',
+    date: '2026-09-13',
+    dateLabel: '13 September 2026',
+    title: 'A world born from stars',
+    milestone: 'This build',
+    changes: [
+      'A dense nucleus compresses, ignites and ejects its particles into space. The same particles curve home to form geographic Earth.',
+      'Sparse icy orbital lights and fast aqua atmospheric trails move above the planet. Subtle surface motion and relief preserve its celestial depth.',
+      'Travel through planet, region, city and street scales. Singapore retains its detailed journey; curated lower Manhattan adds a second city in motion.',
+      'Warm road traffic follows bundled street geometry, with softer activity around the city. These are deterministic visualisations, not live tracking.',
+      'Singapore, New York and Challenger Deep share a small world-command interface prepared for Astra navigation. The manual controls use that same interface.',
+    ],
+    review: 'Native WebGL reviewed at desktop and phone widths, including the full genesis, paused Earth, destination controls, New York streets and Singapore descent. Automated checks cover immutable geographic endpoints, replay, reduced motion, movement shells, scale changes, geographic highlights, zoom, resizing and graphics interruption. Physical-phone performance remains unverified. Astra coordinated separate renderer, signal and urban engineering tracks; YC owns Live conversation integration, which is not included in this milestone.',
+  },
   {
     version: '0.5',
     date: '2026-09-13',
     dateLabel: '13 September 2026',
     title: 'A universe within',
-    milestone: 'This build',
+    milestone: 'Previous release',
     changes: [
       'Open the geographic Earth into a layered stellar spiral, then reform the same particles into their original Earth.',
       'Choose three meaningful places from a sourced 48-place catalogue. Their geographic distances shape a constellation of your own.',

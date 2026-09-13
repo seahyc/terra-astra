@@ -2,7 +2,7 @@
 
 Renderer owner: integration lane. YC owns GPT-Live-1 conversation, tool calling, and its own UI component. Please do not modify engine.ts, shaders, camera, canvas-renderer.ts or genesis math.
 
-Current integration branch: `hackathon/genesis-v3`. Contract initially committed at `552c8e0`; adapter implementation is under integration. The public v0.5 release does not expose this API yet. No real Live API call is claimed by the renderer lane.
+Current integration branch: `hackathon/genesis-v3`. Contract initially committed at `552c8e0`; the adapter and all five commands are now implemented and verified locally for the v0.6 milestone. No real Live API call is claimed by the renderer lane. Use this branch as the integration base; the older v0.5 release does not expose this API.
 
 ## Call the world
 
