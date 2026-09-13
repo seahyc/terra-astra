@@ -165,3 +165,41 @@ html{color-scheme:dark}.story-sheet,.about-dialog,.tuning-dialog{scrollbar-width
  .release-meta time{width:100%}
  .release-content h2{font-size:26px}
 }
+
+/* v3: the celestial world leads; navigation appears only after genesis settles. */
+.genesis-active > :not(.universe):not(.genesis-skip):not(.error-message):not(.loading-message){visibility:hidden!important;pointer-events:none!important}
+.genesis-skip{position:absolute;right:36px;bottom:28px;z-index:8;padding:12px 4px;border:0;background:none;color:#aab1bb;font-size:12px;letter-spacing:.025em}
+.genesis-skip:hover{color:#fff8e8}
+.world-navigation{position:relative}
+.world-destinations{position:absolute;left:0;bottom:calc(100% + 14px);width:340px;max-height:min(550px,72svh);overflow:auto;padding:24px;background:#080d15f5;border:1px solid #29333f;border-radius:4px}
+.world-destinations-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.world-destinations h2{font:normal 27px/1.15 Georgia,serif;color:#f2dfb9;letter-spacing:-.025em;margin:0}
+.world-destinations-heading button{display:grid;place-items:center;width:30px;height:30px;background:none;border:0;color:#b5bec9}
+.world-destinations>p{font-size:13px;line-height:1.6;color:#a8b5c4;margin:12px 0 18px}
+.world-target{display:flex;align-items:center;justify-content:space-between;text-align:left;gap:24px;width:100%;border:0;border-top:1px solid #26303b;padding:17px 0;background:none;color:#f1d7a8;font-size:16px}
+.world-target small{display:block;font-size:12px;color:#a3b0bf;margin-top:7px;line-height:1.5}
+.world-target:hover{color:#fff8e8}
+.world-layer-actions{display:flex;gap:10px;align-items:center;border-top:1px solid #26303b;margin-top:2px;padding-top:17px;font-size:12px}
+.world-layer-actions>span{margin-right:auto;color:#a3b0bf}
+.world-layer-actions button{background:transparent;border:1px solid #495d68;color:#a8f4ff;padding:7px 10px;border-radius:2px}
+.world-layer-actions button[aria-pressed=false]{border-color:#28323b;color:#8494a2}
+.world-replay{font-size:12px;margin-top:15px;padding-bottom:0;color:#b3bdc7}
+.world-command-message{max-width:300px;color:#f2d4a7;font-size:13px;line-height:1.6}
+.scale-navigation{position:absolute;left:50%;transform:translateX(-50%);bottom:122px;display:flex;gap:15px;z-index:4}
+.scale-navigation button{border:0;border-bottom:1px solid transparent;background:none;padding:8px 2px;color:#a5b4c1;font-size:12px;text-transform:capitalize}
+.scale-navigation button[aria-current]{color:#e8d6b4;border-bottom-color:#e8d6b4}
+.scale-navigation button:hover{color:#fff8e8}
+.scale-name{text-transform:capitalize;font-size:22px}
+.terra-invitation .depth-toggle{font-size:12px;color:#a9b9c8}
+.terra-invitation:has(.depth-toggle[aria-expanded=true]) .world-navigation{display:none}
+@media(max-width:700px){
+ .world-destinations{width:min(335px,calc(100vw - 46px));max-height:65svh;padding:20px}
+ .world-destinations h2{font-size:25px}
+ .world-target{padding:14px 0;font-size:15px}
+ .scale-navigation{left:23px;transform:none;bottom:127px;gap:15px}
+ .terra-invitation{bottom:181px}
+ .genesis-skip{right:22px;bottom:max(20px,env(safe-area-inset-bottom))}
+ .scale-name{font-size:19px}
+ .stage-city .scale-navigation{bottom:193px}
+}
+@media(prefers-reduced-motion:reduce){.world-destinations,.genesis-skip{transition:none}}
