@@ -1,5 +1,7 @@
 # Sprint status
 
+> Historical v0.5 closeout below. The later user re-scope and current v0.6.1 delivery are recorded in [V3-STATUS.md](V3-STATUS.md) and [EXECUTION-V3.md](EXECUTION-V3.md). The earlier record remains intact.
+
 ## Current release — v0.5
 
 The latest user instruction authorized implementation and deployment of the living-universe journey, superseding the earlier v0.4.1 production freeze. The reversible Terra ↔ Astra transformation, three meaningful places, personal constellation, and closing return are implemented and publicly deployed.
