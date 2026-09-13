@@ -17,11 +17,11 @@ registerHooks({ resolve(specifier, context, next) {
 let clock = 0, frame = null, resizeCallback = null;
 const noop = () => {};
 const ctx = new Proxy({ createRadialGradient: () => ({ addColorStop: noop }) }, { get: (o, key) => o[key] ?? noop, set: (o, key, value) => { o[key] = value; return true; } });
-let graphicsLostCallback=null;
+let graphicsLostCallback=null,keyCallback=null;
 class Canvas {
   style = {}; width = 1; height = 1;
   getContext(type) { return type === '2d' ? ctx : null; }
-  addEventListener(type,callback) {if(type==='webglcontextlost')graphicsLostCallback=callback;} removeEventListener() {} setAttribute() {} remove() {}
+  addEventListener(type,callback) {if(type==='webglcontextlost')graphicsLostCallback=callback;if(type==='keydown')keyCallback=callback;} removeEventListener() {} setAttribute() {} remove() {}
 }
 globalThis.document = { hidden: false, createElement: () => new Canvas(), createElementNS: () => new Canvas(), addEventListener: noop, removeEventListener: noop };
 globalThis.window = { devicePixelRatio: 1, innerWidth: 1363 };
@@ -51,6 +51,7 @@ const tick=(ms=60)=>{clock+=ms;const next=frame;frame=null;assert.ok(next);next(
 engine.skipGenesis();
 const baseOptions={glow:1.15,shimmer:1.1,depth:true,threads:.55,density:.85,borders:false,motion:false};engine.configure(baseOptions);tick();
 const objects=()=>{const result=[];rendered.scene.traverse(o=>{if(o instanceof THREE.Points)result.push(o);});return result;};
+assert.deepEqual(objects().filter(o=>o.userData.backgroundDepth).map(o=>o.userData.backgroundDepth).sort((a,b)=>a-b),[8,30],'Two faint physical background depths');assert.equal(engine.worldState().layers.ships,true,'Sea movement starts enabled');assert.ok(objects().some(o=>o.userData.seaBackbone),'Existing engine carries illustrated sea pulses');
 const shells=()=>objects().filter(o=>o.userData.shell&&o.userData.shell!=='ships');
 assert.equal(shells().length,2,'One orbital and one atmosphere shell');
 const radii=shells().map(o=>{const a=o.geometry.getAttribute('position');return [o.userData.shell,...Array.from({length:a.count},(_,i)=>Math.hypot(a.getX(i),a.getY(i),a.getZ(i)))];});
@@ -60,9 +61,11 @@ engine.configure({...baseOptions,motion:true});tick(1000);assert.notDeepEqual(sh
 async function complete(cmd){let done=false,result;const pending=engine.command(cmd).then(v=>{done=true;result=v;});for(let i=0;i<150&&!done;i++){await new Promise(resolve=>setImmediate(resolve));tick(100);}assert.ok(done,'Command resolves within bounded lifecycle');await pending;return result;}
 assert.equal((await complete({type:'focusLayer',layer:'satellites',enabled:false})).ok,true);tick();assert.equal(shells().find(o=>o.userData.shell==='satellites').visible,false);
 assert.equal((await complete({type:'focusLayer',layer:'satellites',enabled:true})).ok,true);tick();assert.equal(shells().find(o=>o.userData.shell==='satellites').visible,true);
+const keyTarget={matches:()=>false,isContentEditable:false,closest:()=>null};const press=(key,extra={})=>{let prevented=false;keyCallback({key,target:keyTarget,preventDefault(){prevented=true;},...extra});return prevented;};const keyboardPose=rendered.camera.position.clone();assert.equal(press('q'),true);tick();assert.ok(rendered.camera.position.distanceTo(keyboardPose)>.01,'Focused canvas Q orbits');const afterOrbit=rendered.camera.position.clone();assert.equal(press('w',{target:{matches:()=>true}}),false);tick();assert.deepEqual(rendered.camera.position.toArray(),afterOrbit.toArray(),'Typing target ignored');assert.equal(press('w',{ctrlKey:true}),false);tick();assert.deepEqual(rendered.camera.position.toArray(),afterOrbit.toArray(),'Browser modifier shortcut ignored');const oldRadius=rendered.camera.position.length();press('r');tick();assert.ok(rendered.camera.position.length()<oldRadius,'R zooms inward');press('t');tick();assert.equal(views.at(-1),'oblique','T tilts through existing camera');press('g');tick();assert.equal(views.at(-1),'globe');
 assert.equal((await complete({type:'flyTo',targetId:'new-york'})).ok,true);assert.equal(engine.worldState().targetId,'new-york');assert.equal(engine.worldState().tier,'city');assert.equal(stages.at(-1),'city');
 assert.ok(Math.abs(Math.atan2(rendered.camera.position.y,Math.hypot(rendered.camera.position.x,rendered.camera.position.z))*180/Math.PI-40.721562)<.01,'New York camera reaches true target');
-assert.equal(shells().every(o=>!o.visible),true,'Global shells fade by city scale');
+assert.equal(shells().every(o=>!o.visible),true,'Global shells fade by city scale');assert.ok(objects().filter(o=>o.userData.seaBackbone).every(o=>!o.visible),'Sea backbone fades before city scale');
+assert.ok(objects().some(o=>o.userData.cityContinuation==='new-york'&&o.visible),'NY procedural continuation surrounds the accurate core');
 const ny=objects().filter(o=>o.userData.urban==='new-york');assert.equal(ny.length,2);assert.ok(ny.every(o=>o.visible),'Traffic and soft activity visible');
 for(const cloud of ny){const a=cloud.geometry.getAttribute('position');for(let i=0;i<a.count;i++)assert.ok(Math.abs(Math.hypot(a.getX(i),a.getY(i),a.getZ(i))-1.00003)<1e-6);}
 const nyBefore=ny.map(o=>o.geometry.getAttribute('position').array.slice());engine.rotate(15,0);tick(500);for(let i=0;i<2;i++)assert.deepEqual(ny[i].geometry.getAttribute('position').array,nyBefore[i]);
