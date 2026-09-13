@@ -2,15 +2,19 @@ import { SPECIAL_TARGETS } from './special-destinations';
 /** Serializable boundary for YC's Live navigator. Rendering stays inside the engine. */
 export type ScaleTier = 'planet' | 'region' | 'city' | 'street';
 export type WorldLayer = 'satellites' | 'aircraft' | 'ships' | 'urban';
+export type WorldPerspective = 'aerial' | 'horizon' | 'cutaway';
+export type WorldLocation = Readonly<{ name: string; latitude: number; longitude: number; span: number }>;
 export type WorldCommand =
   | { type: 'flyTo'; targetId: string }
+  | ({ type: 'flyToLocation' } & WorldLocation)
   | { type: 'setScale'; tier: ScaleTier }
+  | { type: 'setPerspective'; perspective: WorldPerspective }
   | { type: 'focusLayer'; layer: WorldLayer; enabled?: boolean }
   | { type: 'highlightTarget'; targetId: string }
   | { type: 'resetView' };
 export type GenesisPhase = 'core' | 'compression' | 'ignition' | 'ejection' | 'capture' | 'settlement' | 'complete';
 export type GenesisState = Readonly<{ phase: GenesisPhase; progress: number; busy: boolean }>;
-export type WorldState = Readonly<{ targetId: string | null; tier: ScaleTier; busy: boolean; genesis: GenesisState; layers: Readonly<Record<WorldLayer, boolean>> }>;
+export type WorldState = Readonly<{ targetId: string | null; location?: WorldLocation; tier: ScaleTier; perspective: WorldPerspective; busy: boolean; genesis: GenesisState; layers: Readonly<Record<WorldLayer, boolean>> }>;
 export type WorldCommandResult = Readonly<{ ok: boolean; command: WorldCommand; reason?: string }>;
 export type WorldTarget = Readonly<{ id: string; label: string; lat: number; lon: number; tier: ScaleTier; detail: string }>;
 export const WORLD_TARGETS: readonly WorldTarget[] = Object.freeze(([
@@ -22,9 +26,17 @@ export const WORLD_TARGETS: readonly WorldTarget[] = Object.freeze(([
 export function validateWorldCommand(input: unknown): WorldCommand | null {
   if (!input || typeof input !== 'object' || Array.isArray(input)) return null;
   const c=input as Record<string,unknown>;
+  if(c.type==='flyToLocation') {
+    if(typeof c.name!=='string'||!c.name.trim()||c.name.trim().length>80)return null;
+    if(typeof c.latitude!=='number'||!Number.isFinite(c.latitude)||c.latitude < -80||c.latitude > 80)return null;
+    if(typeof c.longitude!=='number'||!Number.isFinite(c.longitude)||c.longitude < -180||c.longitude > 180)return null;
+    if(typeof c.span!=='number'||!Number.isFinite(c.span)||c.span < 2||c.span > 60)return null;
+    return {type:'flyToLocation',name:c.name.trim(),latitude:c.latitude,longitude:c.longitude,span:c.span};
+  }
   if(c.type==='flyTo'||c.type==='highlightTarget') return typeof c.targetId==='string'&&WORLD_TARGETS.some(t=>t.id===c.targetId)?{type:c.type,targetId:c.targetId}:null;
   if(c.type==='resetView')return {type:'resetView'};
   if(c.type==='setScale'&&['planet','region','city','street'].includes(c.tier as string))return {type:'setScale',tier:c.tier as ScaleTier};
+  if(c.type==='setPerspective'&&['aerial','horizon','cutaway'].includes(c.perspective as string))return {type:'setPerspective',perspective:c.perspective as WorldPerspective};
   if(c.type==='focusLayer'&&['satellites','aircraft','ships','urban'].includes(c.layer as string)&&(c.enabled===undefined||typeof c.enabled==='boolean'))return {type:'focusLayer',layer:c.layer as WorldLayer,...(c.enabled===undefined?{}:{enabled:c.enabled})};
   return null;
 }

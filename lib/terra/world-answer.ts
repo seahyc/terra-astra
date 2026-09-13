@@ -12,6 +12,11 @@ export const worldAnswerSchema = z.object({
   explanation: z.string().trim().min(1).max(2000),
   limitation: z.string().trim().max(500),
   targets: z.array(worldTargetSchema).max(4),
+  perspective: z.enum(['aerial', 'horizon', 'cutaway']).optional(),
+  imageBrief: z.object({
+    title: z.string().trim().min(1).max(100),
+    prompt: z.string().trim().min(1).max(1400),
+  }).strict().optional(),
 });
 export type WorldTarget = z.infer<typeof worldTargetSchema>;
 export type WorldAnswer = z.infer<typeof worldAnswerSchema>;

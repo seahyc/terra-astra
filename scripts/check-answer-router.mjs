@@ -1,0 +1,45 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { build } from 'esbuild';
+import { createAnswerRouter } from '../lib/terra/server/answer-router.mjs';
+const bundle = await build({ entryPoints: ['lib/terra/world-answer.ts'], bundle: true, platform: 'node', format: 'esm', write: false });
+const { worldAnswerSchema } = await import(`data:text/javascript;base64,${Buffer.from(bundle.outputFiles[0].text).toString('base64')}`);
+const world = { title: 'Tokyo', explanation: 'Tokyo is on the eastern side of Honshu.', limitation: '', targets: [{name:'Tokyo',latitude:35.68,longitude:139.65,span:8}], perspective:'aerial',imageBrief:null };
+const response = (body, annotations = []) => Response.json({status:'completed',output:[{type:'message',content:[{type:'output_text',text:JSON.stringify(body),annotations}]}]});
+const input = {apiKey:'test-key',question:'Tell me about Tokyo',inventory:{},signal:new AbortController().signal};
+
+test('ordinary arbitrary questions finish in one call without native sessions',async()=>{
+  let calls=0;
+  const answer=createAnswerRouter({worldAnswerSchema,runProbe:()=>assert.fail('No delegation for ordinary questions'),fetchImpl:async(url,init)=>{
+    calls++; assert.equal(url,'https://api.openai.com/v1/responses'); const body=JSON.parse(init.body); assert.equal(body.model,'gpt-5.6-luna'); assert.equal(body.store,false);
+    return response({route:'quick',needsWeb:false,answer:world});
+  }});
+  const result=await answer(input);assert.equal(calls,1);assert.equal(result.measured.subagent_count,0);assert.equal(result.world.targets[0].name,'Tokyo');assert.equal(result.world.imageBrief,undefined);
+});
+
+test('fresh facts escalate to Terra search and retain actual citation annotations',async()=>{
+  const bodies=[];
+  const answer=createAnswerRouter({worldAnswerSchema,runProbe:()=>assert.fail('No native session needed'),fetchImpl:async(url,init)=>{
+    bodies.push(JSON.parse(init.body));return bodies.length===1?response({route:'quick',needsWeb:true,answer:world}):response(world,[{type:'url_citation',url:'https://www.metro.tokyo.lg.jp/',title:'Tokyo Government'},{type:'url_citation',url:'javascript:alert(1)',title:'bad'}]);
+  }});
+  const result=await answer(input);assert.equal(bodies[1].model,'gpt-5.6-terra');assert.equal(bodies[1].tools[0].type,'web_search');assert.equal(bodies[1].tool_choice,'required');assert.equal(result.sources.length,1);assert.equal(result.measured.web_searched,true);
+});
+
+test('explicit deep route uses native delegation and gives opening first',async()=>{
+  const events=[];
+  const answer=createAnswerRouter({worldAnswerSchema,runProbe:async options=>{
+    events.push('research');assert.equal(options.reportPath,null);assert.equal(options.answerMode,'world');return {final_text:JSON.stringify(world),subagent_ids:['one','two']};
+  },fetchImpl:async()=>response({route:'research',needsWeb:false,answer:world})});
+  const result=await answer({...input,onOpening:()=>events.push('opening')});assert.deepEqual(events,['opening','research']);assert.equal(result.measured.subagent_count,2);assert.equal(result.measured.model,'gpt-6-astra');
+});
+
+test('cancelled routing cannot start a fallback request or native run',async()=>{
+  const controller=new AbortController();let calls=0;
+  const answer=createAnswerRouter({worldAnswerSchema,runProbe:()=>assert.fail('Cancelled'),fetchImpl:async()=>{calls++;controller.abort();throw new DOMException('Cancelled','AbortError');}});
+  await assert.rejects(answer({...input,signal:controller.signal}),{name:'AbortError'});assert.equal(calls,1);
+});
+
+test('invalid coordinates do not reach the renderer',async()=>{
+  const answer=createAnswerRouter({worldAnswerSchema,runProbe:()=>assert.fail('Invalid'),fetchImpl:async()=>response({route:'quick',needsWeb:false,answer:{...world,targets:[{name:'Bad',latitude:999,longitude:0,span:8}]}})});
+  await assert.rejects(answer(input));
+});

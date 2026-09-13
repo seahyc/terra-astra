@@ -32,7 +32,7 @@ test('stream sends opening then validated result without filesystem reporting', 
   assert.equal(events.at(-1).result.measured.subagent_count, 2);
 });
 test('Live returns only session identity and SDP, keeping credentials server-side', async () => {
-  const handle = setup({ fetchImpl: async (_url, init) => { assert.equal(init.headers.Authorization, 'Bearer test-secret'); assert.equal(JSON.parse(init.body).session.audio.output.voice,'ripple'); return Response.json({ session: { id: 'session', secret: 'do-not-return' }, transport: { sdp: 'answer', secret: 'also-private' } }); } });
+  const handle = setup({ fetchImpl: async (_url, init) => { assert.equal(init.headers.Authorization, 'Bearer test-secret'); return Response.json({ session: { id: 'session', secret: 'do-not-return' }, transport: { sdp: 'answer', secret: 'also-private' } }); } });
   const response = await handle(request('/session', { sdp: 'offer' }));
   assert.equal(response.status, 201);
   assert.deepEqual(await response.json(), { session: { id: 'session' }, transport: { type: 'webrtc', sdp: 'answer' } });
@@ -46,15 +46,4 @@ test('cancellation is scoped to the authenticated user and frees the active requ
   assert.equal((await (await handle(other)).json()).cancellation_requested, false);
   assert.equal((await (await handle(request('/agents/cancel'))).json()).cancellation_requested, true);
   await response.text();
-});
-
-test('procedural models share authentication, origin and request-size gates', async () => {
-  let calls=0;
-  const modelService={generate:async({apiKey,input,signal})=>{calls++;assert.equal(apiKey,'test-secret');assert.ok(signal);return {recipe:{id:input.brief.title},model:'gpt-5.6-luna'};}};
-  const input={query:'Explain a structure',brief:{title:'Structure',prompt:'A compact shape'}};
-  const handle=setup({modelService});
-  assert.equal((await setup({authorize:async()=>null,modelService})(request('/model',input))).status,401);
-  assert.equal((await handle(request('/model',input,'https://other.test'))).status,403);
-  assert.equal((await handle(request('/model',{...input,query:'x'.repeat(17000)}))).status,413);
-  const response=await handle(request('/model',input));assert.equal(response.status,200);assert.equal((await response.json()).recipe.id,'Structure');assert.equal(calls,1);
 });

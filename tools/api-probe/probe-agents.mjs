@@ -7,10 +7,10 @@ const API_BASE = "https://api.openai.com/v1";
 const AGENTS_BETA = "agents=v1";
 const TIMEOUT_MS = 120_000;
 const CLEANUP_TIMEOUT_MS = 10_000;
-const REPORT_PATH = fileURLToPath(new URL("./probe-report.json", import.meta.url));
+const REPORT_PATH = import.meta.url.startsWith("file:") ? fileURLToPath(new URL("./probe-report.json", import.meta.url)) : null;
 
 export const SEA_DATASET_INVENTORY = Object.freeze({
-  scope: "Terra Astra checked-in Southeast Asia/global source inventory",
+  scope: "Terra Astra checked-in global, Singapore and New York source inventory",
   java_profile: {
     id: "java-north-south",
     question: "Show me Java’s mountains and the ocean floor to its south. How far does the landscape drop?",
@@ -36,12 +36,12 @@ export const SEA_DATASET_INVENTORY = Object.freeze({
   datasets: [
     { name: "Natural Earth", use: "global and regional geography", live: false },
     { name: "NASA Black Marble 2016", use: "artistically sampled historical night-light intensity", live: false },
-    { name: "OpenStreetMap", use: "central Singapore street geometry retrieved 2026-09-09", live: false },
+    { name: "OpenStreetMap", use: "central Singapore streets retrieved 2026-09-09 and curated lower Manhattan streets retrieved 2026-09-13", live: false },
     { name: "NOAA NCEI ETOPO 2022", use: "globe-scale terrain and ocean-floor relief", live: false },
   ],
   caveats: [
     "Night-light intensity is not population.",
-    "Detailed streets cover central Singapore only.",
+    "Detailed streets cover central Singapore and curated lower Manhattan.",
     "Terrain is exaggerated and the stellar interior is imagined.",
     "The inventory contains no live people or live locations.",
   ],
@@ -213,8 +213,9 @@ export async function runProbe({
           model: "gpt-6-astra",
           instructions: answerMode === "world" ? [
             "You are Astra, the concise geographic guide to an interactive Earth. Answer arbitrary geographic, historical or scientific questions with geographic context. Use exactly two native subagents: one reviews the explanation and uncertainty, the other identifies up to four useful location anchors. Wait for both. No further delegation.",
-            "You may use general knowledge but it is NOT source-verified or current data. The supplied inventory states what the globe actually contains. Sculptures listed as available_in_client are already rendered by the app, so describe their conceptual features rather than saying they cannot be shown. Starlight means the app's artistic particle material, not literal night observations. Distinguish established background knowledge, uncertainty and unavailable live data. Do not invent measurements, citations, current counts or live conditions. For current questions explain that a current source is unavailable. For non-geographic questions answer briefly and return no targets.",
-            "Return ONLY one JSON object, no markdown, with title (max100 chars), explanation (at most110 words), limitation (a short plain sentence), targets (0 to4 items each with name, latitude [-80,80], longitude [-180,180], span [2,60] in degrees). Coordinates are approximate orientation anchors, NOT precise boundaries, historical routes or event extents. Targets should be in useful narrative order. Do not include unconfident coordinates. Never instruct app actions in the explanation or claim a camera has moved. Never describe missing satellite, aircraft, historical territory or global street layers as visible.",
+            "You may use general knowledge but it is NOT source-verified or current data. The supplied inventory states what the globe actually contains. Distinguish established background knowledge, material uncertainty and unavailable live data. Do not invent measurements, citations, current counts or live conditions. Mention a limitation only when it changes how the answer should be understood; avoid routine boilerplate caveats. For non-geographic questions answer briefly and return no targets.",
+            "Return ONLY one JSON object, no markdown, with title (max100 chars), explanation (at most110 words), limitation (empty unless a short material uncertainty is relevant), targets (0 to4 items each with name, latitude [-80,80], longitude [-180,180], span [2,60] in degrees), optional perspective ('aerial', 'horizon' or 'cutaway'), and optional imageBrief {title max100 chars,prompt max1400 chars}. Coordinates are approximate orientation anchors, NOT precise boundaries, historical routes or event extents. Targets should be in useful narrative order. Do not include unconfident coordinates. Never instruct app actions in the explanation or claim a camera or generated image is ready.",
+            "Include imageBrief only when one generated visual would materially explain a specific answer point, such as temple architecture, a historical spatial relationship, or a comparison that prose alone makes hard to grasp. Omit it for simple location, navigation, layer, factual lookup or conversational questions. The image is explanatory and schematic, not documentary evidence. Its prompt must name the exact teaching point and use Terra Astra's dark celestial world aesthetic: ivory, gold and violet particles on deep space, precise readable composition, no decorative generic background, no words, captions, logos or watermark. Choose perspective when a geographic aerial, horizon or cutaway view adds meaning; otherwise omit perspective.",
           ].join(" ") : [
             "You are Terra Astra's evidence coordinator. Answer the user's geography question using only the supplied dataset evidence.",
             inventoryMode === "inline" ? "The server has supplied the measured dataset inventory in the user input." : "First, the coordinator itself must call get_sea_dataset_inventory exactly once.",
@@ -235,7 +236,7 @@ export async function runProbe({
           }],
         },
         environment: { type: "none" },
-        input: answerMode === "world" ? `Use two native subagents in parallel: one checks a concise general-knowledge explanation and its uncertainty, one proposes geographic orientation anchors. Give both the question and the inventory. Wait for both. Return the final JSON in the schema from your instructions. User question: ${JSON.stringify(question)}\nActual available globe data: ${JSON.stringify(inventory)}` : `Use two native subagents in parallel before answering. ${inventoryMode === "inline" ? "Use the server-supplied inventory below" : "First call get_sea_dataset_inventory"}, then delegate the quantitative/location audit to one subagent and the evidence-limit/unsupported-inference audit to another. Give each the full inventory, wait for both results, then answer this question:
+        input: answerMode === "world" ? `Use two native subagents in parallel: one checks a concise general-knowledge explanation and its uncertainty, one proposes geographic orientation anchors and decides whether a single explanatory image would materially help under the strict imageBrief criteria. Give both the question and the inventory. Wait for both. Return the final JSON in the schema from your instructions. User question: ${JSON.stringify(question)}\nActual available globe data: ${JSON.stringify(inventory)}` : `Use two native subagents in parallel before answering. ${inventoryMode === "inline" ? "Use the server-supplied inventory below" : "First call get_sea_dataset_inventory"}, then delegate the quantitative/location audit to one subagent and the evidence-limit/unsupported-inference audit to another. Give each the full inventory, wait for both results, then answer this question:
 ${question}${inventoryMode === "inline" ? "\n\nServer-measured inventory:\n" + JSON.stringify(inventory) : ""}`,
         stream: true,
       }),
@@ -360,7 +361,7 @@ ${question}${inventoryMode === "inline" ? "\n\nServer-measured inventory:\n" + J
   }
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (import.meta.url.startsWith("file:") && process.argv[1] === fileURLToPath(import.meta.url)) {
   runProbe({ apiKey: process.env.OPENAI_API_KEY, inventoryMode: process.env.PROBE_INVENTORY_MODE === "inline" ? "inline" : "function", onEvent: event => { if (event.type.includes("subagent.created") || event.type.includes("requires_action")) console.log(JSON.stringify(event)); }, keepSession: process.env.KEEP_SESSION === "1" })
     .then(report => {
       console.log(JSON.stringify({ ok: true, report_path: REPORT_PATH, session_id: report.session_id, cleanup: report.cleanup, subagents: report.subagent_ids.length, tool_calls: report.tool_calls_handled.length, usage: report.usage }, null, 2));

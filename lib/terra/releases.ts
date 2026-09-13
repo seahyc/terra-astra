@@ -1,40 +1,26 @@
 /** User-facing release history. Keep historical entries tied to their saved milestones. */
-export const currentVersion = '0.9';
+export const currentVersion = '0.7.0';
 
 export const releases = [
   {
-    version: '0.9',
+    version: '0.7.0',
     date: '2026-09-13',
     dateLabel: '13 September 2026',
-    title: 'Ready for the journey',
+    title: 'Ask the Earth',
     milestone: 'This build',
     changes: [
-      'Stopping Live releases the microphone immediately while the session finishes closing. A disconnected session can restart from Talk.',
-      'Singapore and New York surroundings receive a small luminance adjustment to soften the change from their detailed cores.',
-      'The same Genesis, five destinations, living shells and WorldCommand interface remain in place.',
+      'Typed and spoken questions share the original Earth. Geographic answers can travel beyond the three examples, with aerial, horizon and cutaway perspectives.',
+      'Everyday questions get a fast answer; harder questions use stronger reasoning or source searches. In-depth research still brings together independent agents. Generated images add context when an illustration helps.',
+      'A compact You / Astra conversation replaces the older Explore and fictional-story controls. The globe stays open to visitors; ChatGPT sign-in enables online answers, voice and images.',
     ],
-    review: 'GPT-Live-1 voice requires ChatGPT sign-in and microphone permission. The public v0.8 session successfully transcribed a spoken Palm Jumeirah request, moved the world and closed. This patch adds immediate microphone release and retains final session usage handling. Activity remains illustrative; physical-phone testing remains unverified.',
+    review: 'TypeScript, build and automated navigation, evidence, streaming, image and hosted-API checks pass. The original globe and typed navigation were checked in a browser. Live API checks cover ordinary questions, source searches and generated images. Hosted microphone/audio and physical-phone performance require separate verification. Geography and movement layers retain their existing source limitations.',
   },
   {
-    version: '0.8',
-    date: '2026-09-13',
-    dateLabel: '13 September 2026',
-    title: 'Different places, different motion',
-    milestone: 'Previous release',
-    changes: [
-      'Palm Jumeirah adds its mapped trunk, fronds and crescent, surrounding Dubai coast, and warm activity along curated local roads.',
-      'Makkah adds Masjid al-Haram context and a source-derived Kaaba anchor. Soft collective movement circulates counter-clockwise, with a persistent interpretive-flow disclosure.',
-      'Both destinations use the existing world-command interface, renderer and fast scale navigation. Genesis, Singapore, New York and Challenger Deep remain connected.',
-      'YC’s Live voice transport and typed navigation share the existing five-target WorldCommand path. A short acknowledgement precedes movement, with context after arrival.',
-    ],
-    review: 'These destinations use bounded OpenStreetMap snapshots. Activity is procedural and illustrative, never live tracking, crowd counts or route guidance. Makkah is an abstract celestial study, not a photorealistic or architectural survey. Physical-phone performance remains unverified. Live audio and general answers require server configuration and ChatGPT sign-in; a successful microphone conversation has not yet been verified on this publication. Typed catalogue navigation works without those services. The v0.7.1 source and saved publication remain available as the fallback.',
-  },
-  {
-    version: '0.7.1',
+    version: '0.7.1-upstream',
     date: '2026-09-13',
     dateLabel: '13 September 2026',
     title: 'Stay with the place you chose',
-    milestone: 'Previous release',
+    milestone: 'Upstream release',
     changes: [
       'The primary journey button follows the selected destination: regional New York returns to New York city detail, and Challenger Deep returns to the planet.',
       'These actions use the existing world-command path and fast scale transitions. Singapore remains the opening destination.',
