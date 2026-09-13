@@ -7,7 +7,7 @@ export const MAX_REGISTERED_TURNS = 1000;
 
 export const TELEMETRY_EVENT_NAMES = [
   'turn.started', 'answer.http', 'answer.opening', 'answer.result',
-  'image.lifecycle', 'voice.status', 'navigation.command',
+  'image.lifecycle', 'model.lifecycle', 'voice.status', 'navigation.command',
   'turn.cancelled', 'turn.error', 'turn.finished',
 ] as const;
 
@@ -33,8 +33,9 @@ const RULES: Record<TelemetryEventName, Record<string, readonly JsonScalar[] | '
   'answer.opening': { phase: ['first', 'complete'], duration_ms: 'number' },
   'answer.result': { model: [...MODEL_VALUES], route: ['quick', 'standard', 'research'], subagent_count: 'number', server_elapsed_ms: 'number', duration_ms: 'number' },
   'image.lifecycle': { phase: ['requested', 'ready', 'error', 'cancelled', 'stale'], status: 'number', duration_ms: 'number', model: [...MODEL_VALUES], cached: 'boolean' },
-  'voice.status': { status: ['off', 'checking_availability', 'requesting_microphone', 'connecting', 'awaiting_session_start', 'started', 'finalizing', 'closed', 'startup_timeout', 'disconnected', 'error'] },
-  'navigation.command': { command_type: ['flyTo', 'flyToLocation', 'setScale', 'setPerspective', 'focusLayer', 'highlightTarget', 'resetView'], index: 'number', ok: 'boolean', duration_ms: 'number', tier: ['planet', 'region', 'city', 'street'], perspective: ['aerial', 'horizon', 'cutaway'], busy: 'boolean', target_kind: ['catalogue', 'dynamic', 'none'] },
+  'model.lifecycle': { phase: ['requested', 'ready', 'error', 'cancelled', 'stale'], point_count: 'number', duration_ms: 'number', model: [...MODEL_VALUES] },
+  'voice.status': { status: ['off', 'checking_availability', 'requesting_microphone', 'microphone_muted', 'connecting', 'reconnecting', 'awaiting_session_start', 'started', 'finalizing', 'closed', 'startup_timeout', 'disconnected', 'error'] },
+  'navigation.command': { command_type: ['flyTo', 'flyToLocation', 'setScale', 'setPerspective', 'focusLayer', 'highlightTarget', 'showProceduralModel', 'clearProceduralModel', 'resetView'], index: 'number', ok: 'boolean', duration_ms: 'number', tier: ['planet', 'region', 'city', 'street'], perspective: ['aerial', 'horizon', 'cutaway'], busy: 'boolean', target_kind: ['catalogue', 'dynamic', 'none'] },
   'turn.cancelled': { reason: ['user', 'superseded', 'unmount'] },
   'turn.error': { error_kind: ['network', 'http', 'unreadable', 'validation', 'navigation', 'unknown'] },
   'turn.finished': { outcome: ['completed', 'navigation_only', 'error', 'cancelled', 'stale'] },
@@ -124,9 +125,32 @@ export function createTelemetryRecorder(overrides: Partial<Clock> = {}) {
   return { beginTurn, record, snapshot, exportJson, clear };
 }
 
-export const telemetry = createTelemetryRecorder();
+type TelemetryRecorder = ReturnType<typeof createTelemetryRecorder>;
+let browserRecorder: TelemetryRecorder | null = null;
+function getBrowserRecorder(): TelemetryRecorder | null {
+  if (typeof window !== 'object') return null;
+  return browserRecorder ??= createTelemetryRecorder();
+}
+function emptySnapshot() {
+  return {
+    report_version: TELEMETRY_REPORT_VERSION, app_build: currentVersion, generated_at: '',
+    privacy: 'Unavailable outside a browser tab; no telemetry was initialized.', session_id: '',
+    limits: { max_events: MAX_TELEMETRY_EVENTS, max_bytes: MAX_TELEMETRY_BYTES, max_registered_turns: MAX_REGISTERED_TURNS, registered_turns: 0, evicted: 0 },
+    events: [] as StoredEvent[],
+  };
+}
+
+/** Lazy browser-only facade. SSR import and server calls never create clocks, IDs or shared state. */
+export const telemetry = Object.freeze({
+  beginTurn(inputMode: 'typed' | 'voice', questionLength: number): string { return getBrowserRecorder()?.beginTurn(inputMode, questionLength) ?? ''; },
+  record(name: TelemetryEventName, metadata: Metadata = {}, turnId?: string): void { getBrowserRecorder()?.record(name, metadata, turnId); },
+  snapshot() { return getBrowserRecorder()?.snapshot() ?? emptySnapshot(); },
+  exportJson(): string { return JSON.stringify(getBrowserRecorder()?.snapshot() ?? emptySnapshot(), null, 2); },
+  clear(): void { getBrowserRecorder()?.clear(); },
+});
 
 export function downloadTelemetryReport(): void {
+  if (typeof document !== 'object' || typeof URL?.createObjectURL !== 'function') return;
   const blob = new Blob([telemetry.exportJson()], { type: 'application/json' });
   const href = URL.createObjectURL(blob);
   const link = document.createElement('a');
