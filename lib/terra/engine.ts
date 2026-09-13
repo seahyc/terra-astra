@@ -121,7 +121,7 @@ export async function createEarth(host:HTMLDivElement,markers:HTMLDivElement,cal
  }
  function rebuildPersonal(){
    releasePersonal();if(!personalPlaces)return;
-   personalEarth=personalGeography(personalPlaces);personalStars=personalAstra(openFrame);
+   personalEarth=personalGeography(personalPlaces);personalStars=personalAstra(personalPlaces,openFrame);
    const data=new Float32Array(18);for(let i=0;i<3;i++)data.set([...personalEarth[i].toArray(),1.65,5.0,1.4+i*1.6],i*6);
    personalCloud=cloud(data,'#ffdc99');personalCloud.points.userData.personal=true;personalCloud.points.renderOrder=20;personalCloud.material.depthTest=false;personalCloud.material.uniforms.personalStar.value=1;personalCloud.material.uniforms.signature.value=1.3;
    personalCloud.points.geometry.setAttribute('astraPosition',new THREE.Float32BufferAttribute(personalStars.flatMap(p=>p.toArray()),3));
