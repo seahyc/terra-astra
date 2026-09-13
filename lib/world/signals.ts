@@ -1,7 +1,7 @@
 import { placeCatalogue } from '../personal/catalogue';
 
 /** Truth-inspired motion, not current positions, scheduled flights or tracked ships.
- * Radii and time are exaggerated for a readable celestial world. See SIGNALS-V3.md.
+ * Radii and time are exaggerated for a readable celestial world. See SIGNALS-V3.md and RUN1-SIGNALS.md.
  */
 export type SignalLayer = 'satellites' | 'aircraft' | 'ships';
 type XYZ = readonly [number, number, number];
@@ -50,7 +50,8 @@ function orbit(index: number, inclination: number, ascendingLongitude: number): 
   return Object.freeze({
     id, layer: 'satellites', label: `${inclination > 75 ? 'Near-polar' : 'Inclined'} orbital light ${index + 1}`,
     provenance: 'procedural', color: signalColors.satellites,
-    radius: 1.20 + (index % 7) * .03, periodSeconds: 170 + index * 9,
+    radius: index < 12 ? 1.20 + (index % 7) * .03 : [1.20, 1.29, 1.38][Math.floor((index - 12) / 20)],
+    periodSeconds: index < 12 ? 170 + index * 9 : 180 + Math.floor((index - 12) / 20) * 38 + (index % 5) * 3,
     phase: phaseFor(id), trailSeconds: 2.4, motion: 'orbit', arcRadians: TAU,
     basisA: geography(0, ascendingLongitude),
     basisB: xyz(Math.cos(longitude) * Math.cos(tilt), Math.sin(tilt), -Math.sin(longitude) * Math.cos(tilt)),
@@ -85,12 +86,13 @@ export const satelliteSignals: readonly WorldSignal[] = Object.freeze([
   orbit(0, 28, 12), orbit(1, 52, 40), orbit(2, 83, 71), orbit(3, 98, 100),
   orbit(4, 42, 132), orbit(5, 65, 165), orbit(6, 89, 193), orbit(7, 35, 228),
   orbit(8, 56, 257), orbit(9, 97, 284), orbit(10, 75, 310), orbit(11, 48, 339),
+  ...Array.from({ length: 60 }, (_, i) => orbit(i + 12, [32, 53, 86, 98][i % 4], (i * 137.508 + 17) % 360)),
 ]);
 
 /** Geographic city anchors are the existing Natural Earth point catalogue.
  * These pairings illustrate movement; they do not assert an airline or service.
  */
-export const aircraftSignals: readonly WorldSignal[] = Object.freeze([
+const aircraftCorridors: readonly WorldSignal[] = Object.freeze([
   flight('Singapore', 'Tokyo'), flight('Singapore', 'Sydney'), flight('Singapore', 'Dubai'),
   flight('Singapore', 'Bangkok'), flight('Singapore', 'Hong Kong'), flight('Jakarta', 'Manila'),
   flight('New Delhi', 'Bangkok'), flight('Tokyo', 'San Francisco'), flight('Seoul', 'Beijing'),
@@ -98,17 +100,44 @@ export const aircraftSignals: readonly WorldSignal[] = Object.freeze([
   flight('New York', 'San Francisco'), flight('Toronto', 'Vancouver'), flight('London', 'Dubai'),
   flight('Paris', 'Istanbul'), flight('Nairobi', 'Cairo'), flight('Lagos', 'Cape Town'),
   flight('São Paulo', 'Buenos Aires'), flight('Sydney', 'Auckland'),
+  flight('Singapore', 'London'), flight('Mumbai', 'Dubai'), flight('New Delhi', 'Dubai'),
+  flight('Bangkok', 'Hong Kong'), flight('Tokyo', 'Sydney'), flight('Seoul', 'San Francisco'),
+  flight('Hong Kong', 'London'), flight('Singapore', 'Melbourne'), flight('New York', 'Paris'),
+  flight('Toronto', 'London'), flight('Vancouver', 'Tokyo'), flight('San Francisco', 'Mexico City'),
+  flight('Mexico City', 'Bogotá'), flight('Bogotá', 'Lima'), flight('Paris', 'Cairo'),
+  flight('London', 'Cape Town'), flight('Rome', 'Istanbul'), flight('Paris', 'Lagos'),
+  flight('Auckland', 'Vancouver'), flight('Buenos Aires', 'Lima'),
 ]);
 
+/** Multiple distinct lights share a curated corridor. Original IDs and first
+ * samples remain unchanged; copies have evenly staggered, repeatable phases.
+ */
+function repeatCorridors(corridors: readonly WorldSignal[], count: number): readonly WorldSignal[] {
+  return Object.freeze(Array.from({ length: count }, (_, copy) => corridors.map(signal => copy === 0 ? signal : Object.freeze({
+    ...signal, id: `${signal.id}-light-${copy + 1}`, phase: (signal.phase + copy / count) % 1,
+    radius: signal.layer === 'aircraft' ? 1.025 + ((signal.phase + copy * .217) % 1) * .035 : signal.radius,
+  }))).flat());
+}
+
+export const aircraftSignals = repeatCorridors(aircraftCorridors, 3);
+
 /** Open-water illustrative legs; not shipping lanes or navigation instructions. */
-export const shipSignals: readonly WorldSignal[] = Object.freeze([
+const seaCorridors: readonly WorldSignal[] = Object.freeze([
   route('sea-south-china', 'ships', 'South China Sea · illustrated', geography(6, 111), geography(15, 114)),
   route('sea-north-atlantic', 'ships', 'North Atlantic · illustrated', geography(35, -50), geography(45, -30)),
   route('sea-indian', 'ships', 'Indian Ocean · illustrated', geography(-12, 60), geography(-5, 78)),
   route('sea-south-pacific', 'ships', 'South Pacific · illustrated', geography(-25, -130), geography(-10, -115)),
   route('sea-mediterranean', 'ships', 'Mediterranean · illustrated', geography(34, 20), geography(34.3, 26)),
   route('sea-north-pacific', 'ships', 'North Pacific · illustrated', geography(32, 155), geography(37, -165)),
+  route('sea-arabian', 'ships', 'Arabian Sea · illustrated', geography(12, 57), geography(20, 65)),
+  route('sea-bay-bengal', 'ships', 'Bay of Bengal · illustrated', geography(7, 84), geography(18, 88)),
+  route('sea-northeast-atlantic', 'ships', 'Northeast Atlantic · illustrated', geography(44, -13), geography(53, -15)),
+  route('sea-south-atlantic', 'ships', 'South Atlantic · illustrated', geography(-25, -35), geography(-8, -20)),
+  route('sea-east-pacific', 'ships', 'Eastern Pacific · illustrated', geography(18, -115), geography(36, -129)),
+  route('sea-coral', 'ships', 'Coral Sea · illustrated', geography(-20, 158), geography(-31, 170)),
 ]);
+
+export const shipSignals = repeatCorridors(seaCorridors, 2);
 
 export const worldSignals: readonly WorldSignal[] = Object.freeze([...satelliteSignals, ...aircraftSignals, ...shipSignals]);
 

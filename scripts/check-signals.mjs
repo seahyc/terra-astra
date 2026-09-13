@@ -15,8 +15,19 @@ const grid = new Int16Array(gridBuffer.buffer, gridBuffer.byteOffset, gridBuffer
 const a = new Float64Array(3), b = new Float64Array(3), c = new Float64Array(3);
 const distance = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]);
 const snapshot = JSON.stringify(worldSignals);
-assert.equal(satelliteSignals.length, 12); assert.equal(aircraftSignals.length, 20); assert.equal(shipSignals.length, 6);
+assert.equal(satelliteSignals.length, 72); assert.equal(aircraftSignals.length, 120); assert.equal(shipSignals.length, 24);
 assert.equal(new Set(worldSignals.map(s => s.id)).size, worldSignals.length);
+assert.equal(new Set(aircraftSignals.map(s => s.id.replace(/-light-\d+$/, ''))).size, 40);
+assert.equal(new Set(shipSignals.map(s => s.id.replace(/-light-\d+$/, ''))).size, 12);
+for (const signals of [aircraftSignals, shipSignals]) {
+  for (const original of signals.filter(s => !/-light-\d+$/.test(s.id))) {
+    const copies = signals.filter(s => s.id === original.id || s.id.startsWith(original.id + '-light-'));
+    assert.equal(copies.length, original.layer === 'aircraft' ? 3 : 2);
+    assert.equal(new Set(copies.map(s => s.phase)).size, copies.length, 'Corridor lights have distinct phases.');
+    assert.ok(copies.every(s => s.basisA === original.basisA && s.basisB === original.basisB), 'Copies reuse fixed corridor geometry.');
+  }
+}
+assert.ok(aircraftSignals.some(s => s.id === 'flight-ne-1159151627-ne-1159151609'), 'The original Singapore/Tokyo identity remains available.');
 let samples = 0;
 for (const signal of worldSignals) {
   assert.ok(Object.isFrozen(signal) && Object.isFrozen(signal.basisA) && Object.isFrozen(signal.basisB));
@@ -65,4 +76,4 @@ for (const signal of worldSignals) {
 }
 assert.equal(JSON.stringify(worldSignals), snapshot, 'Samples never mutate immutable identities or geometry.');
 assert.ok(satelliteSignals.every(signal => Math.PI * 2 / signal.periodSeconds < .038));
-console.log(`PASS: ${samples} finite, bounded, continuous, repeatable samples; 12 orbital lights; 20 sourced city-pair flight paths; 6 ETOPO-water-checked sea paths; exact lagged trails and immutable records.`);
+console.log(`PASS: ${samples} finite, bounded, continuous, repeatable samples; 72 orbital lights; 120 aircraft on 40 sourced corridors; 24 ships on 12 ETOPO-water-checked corridors; exact lagged trails and immutable records.`);
