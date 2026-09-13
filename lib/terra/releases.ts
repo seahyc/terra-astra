@@ -1,13 +1,25 @@
 /** User-facing release history. Keep historical entries tied to their saved milestones. */
-export const currentVersion = '0.6';
+export const currentVersion = '0.6.1';
 
 export const releases = [
+  {
+    version: '0.6.1',
+    date: '2026-09-13',
+    dateLabel: '13 September 2026',
+    title: 'A clearer view into the deep',
+    milestone: 'This build',
+    changes: [
+      'Challenger Deep arrives in the existing angled Horizon view, with clearer seafloor particles at regional scale.',
+      'The terrain selector names the active destination. Regional approaches use matching journey language.',
+    ],
+    review: 'Native WebGL review confirms the angled Mariana view, geographic focus and matching controls. Regional zoom, resizing, perspective switching and the Surface reference pass regression checks. Genesis, planetary exposure and city rendering are unchanged. The v0.6 video remains the recorded living-Earth milestone; YC Live integration is still pending.',
+  },
   {
     version: '0.6',
     date: '2026-09-13',
     dateLabel: '13 September 2026',
     title: 'A world born from stars',
-    milestone: 'This build',
+    milestone: 'Previous release',
     changes: [
       'A dense nucleus compresses, ignites and ejects its particles into space. The same particles curve home to form geographic Earth.',
       'Sparse icy orbital lights and fast aqua atmospheric trails move above the planet. Subtle surface motion and relief preserve its celestial depth.',

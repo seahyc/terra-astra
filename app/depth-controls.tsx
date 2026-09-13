@@ -7,10 +7,11 @@ import { studyRegions, type EarthView, type StudyRegion } from '@/lib/terra/spat
 
 type Props = {
   view: EarthView; region: StudyRegion; depth: boolean; disabled: boolean;
+  activeTargetLabel?: string;
   onView: (view: EarthView) => void; onRegion: (region: StudyRegion) => void; onDepth: (enabled: boolean) => void;
 };
 
-export function DepthControls({ view, region, depth, disabled, onView, onRegion, onDepth }: Props) {
+export function DepthControls({ view, region, depth, disabled, activeTargetLabel, onView, onRegion, onDepth }: Props) {
   return <div className="depth-study" aria-label="Explore Earth's depth">
     <ToggleGroup type="single" value={view} onValueChange={value => { if (value) onView(value as EarthView); }} className="depth-views" aria-label="Earth perspective" disabled={disabled}>
       <ToggleGroupItem value="globe" aria-label="View the globe">Globe</ToggleGroupItem>
@@ -18,9 +19,9 @@ export function DepthControls({ view, region, depth, disabled, onView, onRegion,
       <ToggleGroupItem value="cutaway" aria-label="View a cutaway">Cutaway</ToggleGroupItem>
     </ToggleGroup>
     <div className="depth-region">
-      <Select value={region} onValueChange={value => onRegion(value as StudyRegion)} disabled={disabled}>
+      <Select value={activeTargetLabel?'world-target':region} onValueChange={value => {if(value!=='world-target')onRegion(value as StudyRegion);}} disabled={disabled}>
         <SelectTrigger aria-label="Explore a terrain region"><SelectValue /></SelectTrigger>
-        <SelectContent className="depth-region-menu">{Object.entries(studyRegions).map(([id, place]) => <SelectItem key={id} value={id}>{place.label}</SelectItem>)}</SelectContent>
+        <SelectContent className="depth-region-menu">{activeTargetLabel?<SelectItem value="world-target" disabled>{activeTargetLabel}</SelectItem>:null}{Object.entries(studyRegions).map(([id, place]) => <SelectItem key={id} value={id}>{place.label}</SelectItem>)}</SelectContent>
       </Select>
     </div>
     <div className="depth-comparison"><label htmlFor="depth-enabled">{depth ? 'Sculpted Earth' : 'Surface reference'}</label><Switch id="depth-enabled" checked={depth} onCheckedChange={onDepth} disabled={disabled} aria-label="Show spatial depth" /></div>
