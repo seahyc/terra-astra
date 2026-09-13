@@ -147,3 +147,8 @@ For rollback, select the known saved Sites version and redeploy it when authoriz
 - Carries the responsive interface, reusable model library, voice and diagnostics into the public demo.
 - Corrects framing for generated models with no geographic anchor, which could extend outside the view in the v0.8.0 candidate.
 - v0.8.0 was committed and tagged but held before Sites version saving or deployment when the final browser check exposed this issue. Its tag remains unchanged.
+
+## v0.8.2 — 2026-09-13 — Ready to ask
+- Makes the existing ChatGPT sign-in link a prominent, touch-sized button.
+- Removes the manual model-library picker from the answer panel while preserving automatic model selection and named-part controls.
+- Records the production v0.8.1 mobile answer/model and metadata-export checks, with remaining evaluation limits.
