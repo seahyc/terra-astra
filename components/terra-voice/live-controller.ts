@@ -8,7 +8,10 @@ export type LiveDelegation = {
   query: string;
 };
 
+export type PlaybackState = "idle" | "playing" | "blocked" | "unavailable";
+
 export type LiveControllerCallbacks = {
+  onPlaybackState?: (state: PlaybackState) => void;
   onStatus: (status: string) => void;
   onTranscript: (rows: TranscriptRow[]) => void;
   onDelegation: (delegation: LiveDelegation) => void;
@@ -18,6 +21,7 @@ export type LiveControllerCallbacks = {
 
 export type LiveController = {
   start: () => Promise<void>;
+  resumeAudio: () => Promise<void>;
   stop: () => void;
   dispose: () => void;
   say: (delegationId: string | null, content: string) => void;
@@ -30,6 +34,10 @@ type TranscriptFragment = TranscriptRow & {
 };
 
 type LiveEvent = Record<string, unknown>;
+
+// Prime the same output element in the microphone click, before any network awaits.
+// Browsers may still require the explicit Enable audio action for the remote stream.
+const SILENT_AUDIO = "data:audio/wav;base64,UklGRsQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 
 const STARTUP_TIMEOUT_MS = 30_000;
 const GRACEFUL_CLOSE_TIMEOUT_MS = 15_000;
@@ -44,6 +52,7 @@ export function createLiveController(
   let channel: RTCDataChannel | null = null;
   let microphone: MediaStream | null = null;
   let audio: HTMLAudioElement | null = null;
+  let playbackAttempt = 0;
   let connectionAbort: AbortController | null = null;
   let generation = 0;
   let ready = false;
@@ -91,6 +100,8 @@ export function createLiveController(
 
   function releaseResources(): void {
     generation += 1;
+    playbackAttempt += 1;
+    callbacks.onPlaybackState?.("idle");
     ready = false;
     closing = false;
     pendingDelegation = null;
@@ -125,6 +136,25 @@ export function createLiveController(
 
   function isCurrent(runGeneration: number): boolean {
     return !disposed && runGeneration === generation;
+  }
+
+  async function resumeAudio(): Promise<void> {
+    const output = audio;
+    if (!output?.srcObject || disposed || closing) return;
+    const runGeneration = generation;
+    const attempt = ++playbackAttempt;
+    const current = () => isCurrent(runGeneration) && !closing && audio === output && attempt === playbackAttempt;
+    try {
+      // Keep play() before the first await so a recovery click retains its gesture.
+      await output.play();
+      if (current()) callbacks.onPlaybackState?.("playing");
+    } catch (error) {
+      if (!current()) return;
+      // A replaced source or Stop can interrupt play without an autoplay denial.
+      const name = error instanceof Error ? error.name : "";
+      if (name === "AbortError") return;
+      callbacks.onPlaybackState?.(name === "NotAllowedError" ? "blocked" : "unavailable");
+    }
   }
 
   function failConnection(message: string): void {
@@ -357,6 +387,11 @@ export function createLiveController(
     }, STARTUP_TIMEOUT_MS);
 
     try {
+      audio = new Audio(SILENT_AUDIO);
+      audio.autoplay = true;
+      audio.setAttribute("playsinline", "");
+      // This best-effort gesture preparation must not delay microphone startup.
+      void audio.play().catch(() => {});
       const statusResponse = await fetch("/api/terra/status", {
         signal: connectionAbort.signal,
         cache: "no-store",
@@ -394,14 +429,10 @@ export function createLiveController(
         });
       }
       peer = new RTCPeerConnection();
-      audio = new Audio();
-      audio.autoplay = true;
       peer.addEventListener("track", (trackEvent) => {
         if (!isCurrent(runGeneration) || !audio) return;
         audio.srcObject = new MediaStream([trackEvent.track]);
-        void audio.play().catch(() => {
-          reportError("Remote audio arrived, but browser autoplay was blocked.");
-        });
+        void resumeAudio();
       });
       peer.addEventListener("connectionstatechange", () => {
         if (!isCurrent(runGeneration) || closing || !peer) return;
@@ -487,6 +518,8 @@ export function createLiveController(
       return;
     }
     closing = true;
+    playbackAttempt += 1;
+    callbacks.onPlaybackState?.("idle");
     callbacks.onStatus("finalizing");
     try {
       channel.send(
@@ -517,6 +550,7 @@ export function createLiveController(
 
   return {
     start,
+    resumeAudio,
     stop,
     dispose,
     say: (delegationId, content) =>

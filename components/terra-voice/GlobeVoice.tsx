@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Mic, MoreHorizontal, Square } from 'lucide-react';
 import { z } from 'zod';
-import { createLiveController } from './live-controller';
+import { createLiveController, type PlaybackState } from './live-controller';
 import styles from './globe-voice.module.css';
 import QuestionBar from '../terra-input/QuestionBar';
 import { readAnswerStream } from './answer-stream';
@@ -82,6 +82,7 @@ function splitEditorialAnswer(text: string) {
 
 export default function GlobeVoice({ ready, onAskReady }: Props) {
   const [voiceStatus, setVoiceStatus] = useState('off');
+  const [playbackState, setPlaybackState] = useState<PlaybackState>('idle');
   const [needsSignIn, setNeedsSignIn] = useState(false);
   useEffect(() => { const controller = new AbortController(); void fetch('/api/terra/status', { signal: controller.signal }).then(r => r.json()).then(status => setNeedsSignIn(Boolean(status && typeof status === 'object' && 'signedIn' in status && status.signedIn === false))).catch(() => {}); return () => controller.abort(); }, []);
   const [progress, setProgress] = useState('');
@@ -318,6 +319,7 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
   useEffect(() => { askRef.current = (q, id) => { void ask(q,id); }; onAskReady(q => { void ask(q); }); return () => onAskReady(null); }, [ask, onAskReady]);
   useEffect(() => {
     const controller = createLiveController({
+      onPlaybackState: setPlaybackState,
       onStatus:status => { setVoiceStatus(status); telemetry.record('voice.status', { status: voiceTelemetryStatus(status) }, activeTurnRef.current ?? undefined); }, onTranscript:setRows, onError:setError,
       onAssistantText:emphasize,
       onDelegation:({id,query}) => askRef.current(query,id),
@@ -390,6 +392,7 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
       <button className={`${styles.voiceButton} ${isOn ? styles.active : ''}`} type="button" disabled={!ready || (busy && !isOn)} onClick={() => isOn ? cancel() : void live.current?.start()} aria-label={isOn ? busy ? 'Voice active while answering' : 'Stop voice' : 'Talk to Earth'} title={isOn ? busy ? 'Voice active while answering' : 'Stop voice' : 'Talk to Earth'}>{isOn && !busy ? <Square size={15}/> : <Mic size={19}/>}</button>
       <details className={styles.diagnostics}><summary aria-label="Diagnostics" title="Diagnostics"><MoreHorizontal size={19}/></summary><div><button type="button" onClick={downloadTelemetryReport}>Export debug report</button><button type="button" onClick={() => telemetry.clear()}>Clear diagnostics</button><p>Stored only in this tab. Raw questions, answers, audio, images, and credentials are excluded.</p></div></details>
     </div>
+    {(playbackState === 'blocked' || playbackState === 'unavailable') && <div className={styles.audioRecovery} role="status"><span>{playbackState === 'blocked' ? 'Your browser paused Astra’s audio.' : 'Astra’s audio could not play.'}</span><button type="button" onClick={() => void live.current?.resumeAudio()}>{playbackState === 'blocked' ? 'Enable audio' : 'Retry audio'}</button></div>}
     {visibleVoiceStatus && <p className={styles.live}>{visibleVoiceStatus}</p>}
   </section></>;
 }

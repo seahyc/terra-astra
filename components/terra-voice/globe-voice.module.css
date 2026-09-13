@@ -17,3 +17,5 @@
 .modelEvidence{margin-top:10px;color:#8fa5b3;font:11px/1.5 Arial,sans-serif}.modelEvidence summary{cursor:pointer;padding-block:7px}.modelEvidence p{margin:4px 0}
 
 .signInButton{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 14px;border:1px solid #e0d0ff;border-radius:10px;background:#d6c8ff;color:#171224;font:600 13px/1.2 Arial,sans-serif;text-decoration:none;cursor:pointer}.signInButton:hover{background:#e9dfff}.signInButton:focus-visible{outline:2px solid #fff;outline-offset:3px}
+
+.audioRecovery{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px 12px;padding:3px 7px 0;color:#b7b0c3;font:11px/1.4 Arial,sans-serif}.audioRecovery button{min-height:44px;padding:8px 10px;border:0;border-radius:7px;background:transparent;color:#e3d6ff;font:600 12px/1.3 Arial,sans-serif;cursor:pointer;text-decoration:underline;text-underline-offset:3px}.audioRecovery button:hover{background:#d6c8ff12}.audioRecovery button:focus-visible{outline:2px solid #eee5ff;outline-offset:2px}

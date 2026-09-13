@@ -2,9 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createLiveController } from '../components/terra-voice/live-controller.ts';
 
-function harness(t, { getUserMedia } = {}) {
+function harness(t, { getUserMedia, play = () => Promise.resolve() } = {}) {
   t.mock.timers.enable({ apis: ['setTimeout'] });
-  const statuses = [], errors = [], delegations = [], transcripts = [];
+  const statuses = [], errors = [], delegations = [], transcripts = [], playback = [], outputs = [], order = [];
   class Track extends EventTarget {
     kind = 'audio'; readyState = 'live'; enabled = true; muted = false;
     stop() { this.readyState = 'ended'; }
@@ -27,18 +27,25 @@ function harness(t, { getUserMedia } = {}) {
     async setRemoteDescription() {}
     close() { this.connectionState = 'closed'; }
   }
-  class Audio { autoplay = false; pause() {} load() {} removeAttribute() {} async play() {} }
+  class Audio {
+    autoplay = false; srcObject = null; calls = 0;
+    constructor(src) { this.src = src; outputs.push(this); }
+    pause() {} load() {} removeAttribute() {} setAttribute() {}
+    play() { order.push('play'); return play(this, ++this.calls); }
+  }
+  class MediaStream { constructor(tracks) { this.tracks = tracks; } getTracks() { return this.tracks; } }
+
   const originals = new Map();
   for (const [key, value] of Object.entries({
     navigator: { mediaDevices: { getUserMedia: getUserMedia ?? (async () => stream) } },
-    RTCPeerConnection: Peer, Audio,
-    fetch: async url => Response.json(url.endsWith('/status') ? { configured: true, signedIn: true } : { transport: { sdp: 'answer' } }),
+    RTCPeerConnection: Peer, Audio, MediaStream,
+    fetch: async url => { order.push('fetch'); return Response.json(url.endsWith('/status') ? { configured: true, signedIn: true } : { transport: { sdp: 'answer' } }); },
   })) {
     originals.set(key, Object.getOwnPropertyDescriptor(globalThis, key));
     Object.defineProperty(globalThis, key, { value, configurable: true, writable: true });
   }
   const controller = createLiveController({
-    onStatus: value => statuses.push(value), onError: value => errors.push(value),
+    onPlaybackState: value => playback.push(value), onStatus: value => statuses.push(value), onError: value => errors.push(value),
     onDelegation: value => delegations.push(value), onTranscript: value => transcripts.push(value), onAssistantText() {},
   });
   t.after(() => {
@@ -48,7 +55,8 @@ function harness(t, { getUserMedia } = {}) {
     }
   });
   const receive = data => peers.at(-1).channel.dispatchEvent(new MessageEvent('message', { data: JSON.stringify(data) }));
-  return { controller, track, stream, statuses, errors, delegations, transcripts, receive, get peer() { return peers.at(-1); },
+  return { controller, track, stream, statuses, errors, delegations, transcripts, receive, playback, outputs, order,
+    remote() { const event = new Event('track'); event.track = new Track(); peers.at(-1).dispatchEvent(event); }, get peer() { return peers.at(-1); },
     async start() { await controller.start(); receive({ type: 'session.started' }); },
     input(delta, start_ms = 0, end_ms = 500) { receive({ type: 'session.input_transcript.delta', delta, start_ms, end_ms }); },
     delegate(id, offset_ms = 500) { receive({ type: 'session.delegation.created', offset_ms, delegation: { target: 'client', id } }); },
@@ -147,4 +155,62 @@ test('permission denial produces actionable feedback and no peer connection', as
   await h.controller.start();
   assert.match(h.errors.at(-1) ?? '', /Allow microphone access/i);
   assert.equal(h.statuses.at(-1), 'error'); assert.equal(h.peer, undefined);
+});
+
+
+test('output is prepared synchronously before network and reused for remote audio', async t => {
+  const h = harness(t);
+  const starting = h.controller.start();
+  assert.deepEqual(h.order.slice(0, 2), ['play', 'fetch']);
+  await starting; h.receive({ type: 'session.started' }); h.remote();
+  await Promise.resolve();
+  assert.equal(h.outputs.length, 1); assert.equal(h.outputs[0].calls, 2);
+  assert.equal(h.playback.at(-1), 'playing');
+});
+
+test('autoplay denial is recoverable without losing microphone or creating another session', async t => {
+  const h = harness(t, { play: (_, call) => call === 2 ? Promise.reject(new DOMException('blocked', 'NotAllowedError')) : Promise.resolve() });
+  await h.start(); h.remote(); await Promise.resolve();
+  assert.equal(h.playback.at(-1), 'blocked'); assert.deepEqual(h.errors, []);
+  assert.equal(h.track.readyState, 'live'); assert.equal(h.peer.connectionState, 'connected');
+  h.input('Show Tokyo.'); h.delegate('while-blocked'); t.mock.timers.tick(700);
+  assert.equal(h.delegations.length, 1);
+  const connection = h.peer, calls = h.outputs[0].calls;
+  const resumed = h.controller.resumeAudio();
+  assert.equal(h.outputs[0].calls, calls + 1, 'Retry play runs directly in the click call');
+  await resumed;
+  assert.equal(h.playback.at(-1), 'playing'); assert.equal(h.peer, connection);
+  assert.equal(h.outputs.length, 1);
+});
+
+test('other media errors are retryable but not misreported as autoplay denial', async t => {
+  const h = harness(t, { play: (_, call) => call === 2 ? Promise.reject(new DOMException('decode', 'NotSupportedError')) : Promise.resolve() });
+  await h.start(); h.remote(); await Promise.resolve();
+  assert.equal(h.playback.at(-1), 'unavailable'); assert.deepEqual(h.errors, []);
+  await h.controller.resumeAudio(); assert.equal(h.playback.at(-1), 'playing');
+});
+
+test('late playback rejection cannot resurrect a prompt after Stop or restart', async t => {
+  let reject;
+  const h = harness(t, { play: (_, call) => call === 2 ? new Promise((_, r) => { reject = r; }) : Promise.resolve() });
+  await h.start(); h.remote(); const output = h.outputs[0]; h.controller.stop();
+  reject(new DOMException('blocked', 'NotAllowedError')); await Promise.resolve();
+  assert.equal(h.playback.at(-1), 'idle');
+  await h.controller.resumeAudio(); assert.equal(output.calls, 2);
+  h.receive({ type: 'session.closed' });
+  await h.start(); assert.equal(h.playback.at(-1), 'idle');
+});
+
+test('a superseded play rejection cannot overwrite a successful retry', async t => {
+  let reject;
+  const h = harness(t, { play: (_, call) => call === 2 ? new Promise((_, r) => { reject = r; }) : Promise.resolve() });
+  await h.start(); h.remote(); await h.controller.resumeAudio();
+  reject(new DOMException('blocked', 'NotAllowedError')); await Promise.resolve();
+  assert.equal(h.playback.at(-1), 'playing');
+});
+
+test('interrupted playback is not presented as an autoplay error', async t => {
+  const h = harness(t, { play: (_, call) => call === 2 ? Promise.reject(new DOMException('interrupted', 'AbortError')) : Promise.resolve() });
+  await h.start(); h.remote(); await Promise.resolve();
+  assert.equal(h.playback.at(-1), 'idle'); assert.deepEqual(h.errors, []);
 });
