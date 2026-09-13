@@ -13,6 +13,10 @@ export const worldAnswerSchema = z.object({
   limitation: z.string().trim().max(500),
   targets: z.array(worldTargetSchema).max(4),
   perspective: z.enum(['aerial', 'horizon', 'cutaway']).optional(),
+  modelBrief: z.object({
+    title:z.string().trim().min(1).max(100),
+    prompt:z.string().trim().min(1).max(1400),
+  }).strict().optional(),
   imageBrief: z.object({
     title: z.string().trim().min(1).max(100),
     prompt: z.string().trim().min(1).max(1400),

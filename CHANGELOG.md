@@ -128,3 +128,13 @@ For rollback, select the known saved Sites version and redeploy it when authoriz
 - Makes HTML and malformed answer streams fail with readable messages, and cancels broken streams.
 - Adds a 20-case general-answering evaluation specification and a separate live QA record. The full specification is not an executed test suite.
 - Validation: targeted navigation, streaming and telemetry checks, including redaction, cancellation and 10,000-turn bounded storage. Live QA identifies remaining regional visibility and actual flight/satellite feed limitations. Hosted microphone/audio and physical-phone testing remain separate verification tasks.
+
+## v0.8.0 — 2026-09-13 — An explanation beside the Earth
+- Replaces the bulky answer dock with a responsive editorial answer/graphic panel, right-side focal globe, and compact bottom You/Astra transcript. One stop control handles active work; diagnostics lives in a small composer menu.
+- Generates bounded data-only procedural recipes from question-specific briefs; compiles six geometric primitive types into the same starlight shader inside the shared Earth scene. Shared WorldCommand handles model show/clear; geometry is normalized, terrain-grounded and disposed on replacement.
+- Settles the horizon before model placement, gently orbits the geographic anchor, preserves user camera interaction and reduced-motion preferences, and frames phone targets above the answer panel.
+- Adds authenticated, bounded model generation alongside existing asynchronous image generation, with cancellation and stale-turn guards. Graphics remain explanatory, not measurement sources.
+- Fixes voice fragment debounce, duplicate delegation, stale question reuse, microphone interruption and transport recovery. Removes the application three-minute cutoff and uses the API-verified Ripple voice with restrained playful delivery.
+- Corrects v0.7.2 import-time telemetry initialization. That release was saved and deployed, but live page verification failed; production was restored to v0.7.1 while this correction was prepared. Recorder now initializes only on browser use; SSR imports perform no random/clock work.
+- Includes separately committed real-data adapters and a cancellable poller as preparation; visible movement layers are not yet connected to those feeds in this release.
+- Validation: targeted model, renderer lifecycle, HTTP/answer routing, voice and telemetry regression checks; TypeScript. A real local Borobudur question generated both a model on the globe and an explanatory image. Browser viewport checks include desktop and phone widths; physical-phone and microphone audio testing remain separate.

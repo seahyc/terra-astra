@@ -1,15 +1,26 @@
 /** User-facing release history. Keep historical entries tied to their saved milestones. */
-export const currentVersion = '0.7.2';
+export const currentVersion = '0.8.0';
 
 export const releases = [
   {
-    version: '0.7.2', date: '2026-09-13', dateLabel: '13 September 2026', title: 'Clearer answers and diagnostics', milestone: 'This build',
+    version: '0.8.0', date: '2026-09-13', dateLabel: '13 September 2026', title: 'An explanation beside the Earth', milestone: 'This build',
+    changes: [
+      'Answers now have an editorial title, short lead and generated explanatory graphic beside the map. A slim bottom transcript separates your words from Astra’s, with one stop action.',
+      'A data-only model planner composes simple three-dimensional shapes into starlight models within the existing globe. The camera settles into the horizon and gently orbits the focal scene.',
+      'Phone layouts place the globe above a bounded answer panel and keep touch controls above the safe area. Manual movement and reduced motion remain respected.',
+      'Voice handles late transcript fragments, microphone interruption and transient connection loss, with a playful Ripple voice. A local three-minute cutoff has been removed.',
+      'Diagnostics record only bounded metadata in the browser and can be exported from the composer menu. Server rendering no longer initializes the recorder.',
+    ],
+    review: 'Automated checks cover the shared command boundary, model geometry, request limits, cancellation, voice lifecycle and telemetry. A real local answer generated a Borobudur model and diagram inside the map. Native browser checks cover desktop and phone-width layouts; physical-phone and microphone audio verification remain separate. Real-data adapters are prepared but are not yet connected to the visible movement layers.',
+  },
+  {
+    version: '0.7.2', date: '2026-09-13', dateLabel: '13 September 2026', title: 'Clearer answers and diagnostics', milestone: 'Rolled back',
     changes: [
       'Comparison and explanation requests keep their full meaning when they also ask for a camera change. Named flights and satellites are handled as questions instead of decorative layer commands.',
       'An optional Diagnostics panel exports a bounded report of timing, model routing, navigation and failures from this tab. Conversation text, audio, images and credentials are excluded.',
       'Unexpected service responses now produce a readable error instead of exposing a JSON parser message.',
     ],
-    review: 'Automated checks cover navigation intent, streamed answers, safe errors, telemetry redaction and bounded storage. Live testing of the preceding build exposed the comparison routing failure and dark regional framing. Real flight and satellite tracking, multi-place framing and physical-phone/audio testing remain separate work.',
+    review: 'Deployment completed, but the live page check exposed import-time diagnostics initialization during server rendering. Production was restored to v0.7.1; v0.8.0 corrects this. Automated checks covered navigation intent, streamed answers, safe errors, telemetry redaction and bounded storage. Live testing of the preceding build exposed the comparison routing failure and dark regional framing. Real flight and satellite tracking, multi-place framing and physical-phone/audio testing remain separate work.',
   },
   {
     version: '0.7.1', date: '2026-09-13', dateLabel: '13 September 2026', title: 'Hosted answers', milestone: 'Previous release',

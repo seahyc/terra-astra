@@ -1,3 +1,4 @@
+import { validateProceduralModelRecipe, type ProceduralModelRecipe } from '../terra/sculptures/procedural-model';
 /** Serializable boundary for YC's Live navigator. Rendering stays inside the engine. */
 export type ScaleTier = 'planet' | 'region' | 'city' | 'street';
 export type WorldLayer = 'satellites' | 'aircraft' | 'ships' | 'urban';
@@ -10,10 +11,12 @@ export type WorldCommand =
   | { type: 'setPerspective'; perspective: WorldPerspective }
   | { type: 'focusLayer'; layer: WorldLayer; enabled?: boolean }
   | { type: 'highlightTarget'; targetId: string }
+  | { type: 'showProceduralModel'; recipe: ProceduralModelRecipe; anchor?: WorldLocation }
+  | { type: 'clearProceduralModel' }
   | { type: 'resetView' };
 export type GenesisPhase = 'core' | 'compression' | 'ignition' | 'ejection' | 'capture' | 'settlement' | 'complete';
 export type GenesisState = Readonly<{ phase: GenesisPhase; progress: number; busy: boolean }>;
-export type WorldState = Readonly<{ targetId: string | null; location?: WorldLocation; tier: ScaleTier; perspective: WorldPerspective; busy: boolean; genesis: GenesisState; layers: Readonly<Record<WorldLayer, boolean>> }>;
+export type WorldState = Readonly<{ targetId: string | null; location?: WorldLocation; proceduralModel?: Readonly<{id:string;title:string;pointCount:number}>; tier: ScaleTier; perspective: WorldPerspective; busy: boolean; genesis: GenesisState; layers: Readonly<Record<WorldLayer, boolean>> }>;
 export type WorldCommandResult = Readonly<{ ok: boolean; command: WorldCommand; reason?: string }>;
 export type WorldTarget = Readonly<{ id: string; label: string; lat: number; lon: number; tier: ScaleTier; detail: string }>;
 export const WORLD_TARGETS: readonly WorldTarget[] = Object.freeze(([
@@ -24,6 +27,16 @@ export const WORLD_TARGETS: readonly WorldTarget[] = Object.freeze(([
 export function validateWorldCommand(input: unknown): WorldCommand | null {
   if (!input || typeof input !== 'object' || Array.isArray(input)) return null;
   const c=input as Record<string,unknown>;
+  if(c.type==='clearProceduralModel')return {type:'clearProceduralModel'};
+  if(c.type==='showProceduralModel') {
+    try {
+      const recipe=validateProceduralModelRecipe(c.recipe);
+      if(c.anchor===undefined)return {type:'showProceduralModel',recipe};
+      if(!c.anchor||typeof c.anchor!=='object'||Array.isArray(c.anchor))return null;
+      const anchor=validateWorldCommand({...c.anchor as Record<string,unknown>,type:'flyToLocation'});
+      return anchor?.type==='flyToLocation'?{type:'showProceduralModel',recipe,anchor:{name:anchor.name,latitude:anchor.latitude,longitude:anchor.longitude,span:anchor.span}}:null;
+    }catch{return null;}
+  }
   if(c.type==='flyToLocation') {
     if(typeof c.name!=='string'||!c.name.trim()||c.name.trim().length>80)return null;
     if(typeof c.latitude!=='number'||!Number.isFinite(c.latitude)||c.latitude < -80||c.latitude > 80)return null;

@@ -32,9 +32,9 @@ type TranscriptFragment = TranscriptRow & {
 type LiveEvent = Record<string, unknown>;
 
 const STARTUP_TIMEOUT_MS = 30_000;
-const SESSION_TIMEOUT_MS = 180_000;
 const GRACEFUL_CLOSE_TIMEOUT_MS = 15_000;
 const DELEGATION_SETTLE_MS = 650;
+const DISCONNECT_TIMEOUT_MS = 8_000;
 const MAX_EVENT_BYTES = 480;
 
 export function createLiveController(
@@ -52,10 +52,14 @@ export function createLiveController(
   let eventSequence = 0;
   let fragments: TranscriptFragment[] = [];
   let startupTimer: ReturnType<typeof setTimeout> | null = null;
-  let sessionTimer: ReturnType<typeof setTimeout> | null = null;
   let closeTimer: ReturnType<typeof setTimeout> | null = null;
   let delegationTimer: ReturnType<typeof setTimeout> | null = null;
+  let disconnectTimer: ReturnType<typeof setTimeout> | null = null;
   let pendingDelegation: { id: string; generation: number } | null = null;
+  let consumedFragmentCount = 0;
+  let consumedEndMs = -1;
+  const handledDelegations = new Set<string>();
+  const receivedEvents = new Set<string>();
 
   const reportError = (message: string) => callbacks.onError(message);
 
@@ -80,7 +84,9 @@ export function createLiveController(
   }
 
   function retainedQuery(): string {
-    return groupedTranscript().filter(row => row.who === "user").at(-1)?.text.trim() ?? "";
+    return fragments.slice(consumedFragmentCount)
+      .filter(fragment => fragment.who === 'user' && (fragment.endMs === undefined || fragment.endMs > consumedEndMs))
+      .map(fragment => fragment.text).join('').trim();
   }
 
   function releaseResources(): void {
@@ -89,9 +95,9 @@ export function createLiveController(
     closing = false;
     pendingDelegation = null;
     startupTimer = clearTimer(startupTimer);
-    sessionTimer = clearTimer(sessionTimer);
     closeTimer = clearTimer(closeTimer);
     delegationTimer = clearTimer(delegationTimer);
+    disconnectTimer = clearTimer(disconnectTimer);
     connectionAbort?.abort();
     connectionAbort = null;
     microphone?.getTracks().forEach((track) => track.stop());
@@ -119,6 +125,18 @@ export function createLiveController(
 
   function isCurrent(runGeneration: number): boolean {
     return !disposed && runGeneration === generation;
+  }
+
+  function failConnection(message: string): void {
+    reportError(message);
+    callbacks.onStatus('error');
+    releaseResources();
+  }
+
+  function activeStatus(): void {
+    if (!ready || closing) return;
+    callbacks.onStatus(peer?.connectionState === 'disconnected' ? 'reconnecting'
+      : microphone?.getAudioTracks().some(track => track.muted || !track.enabled) ? 'microphone muted' : 'started');
   }
 
   function sendEvent(event: Record<string, unknown>): boolean {
@@ -184,13 +202,16 @@ export function createLiveController(
         !pendingDelegation ||
         pendingDelegation.id !== scheduled.id ||
         pendingDelegation.generation !== scheduled.generation ||
-        !isCurrent(scheduled.generation)
+        !isCurrent(scheduled.generation) || closing || !ready
       ) {
         return;
       }
       const query = retainedQuery();
       if (!query) return;
       pendingDelegation = null;
+      consumedFragmentCount = fragments.length;
+      consumedEndMs = Math.max(consumedEndMs, ...fragments.filter(fragment => fragment.who === 'user').map(fragment => fragment.endMs ?? -1));
+      handledDelegations.add(scheduled.id);
       callbacks.onDelegation({ id: scheduled.id, query });
     }, delay);
   }
@@ -209,7 +230,10 @@ export function createLiveController(
     });
     emitTranscript();
     if (who === "assistant") callbacks.onAssistantText(groupedTranscript().filter(row => row.who === "assistant").at(-1)?.text ?? delta);
-    if (who === "user" && pendingDelegation && delegationTimer === null) {
+    if (who === "user" && pendingDelegation) {
+      // Transcript events are fragments, not complete turns. Wait for the
+      // latest words to settle instead of submitting the first partial phrase.
+      delegationTimer = clearTimer(delegationTimer);
       scheduleDelegation();
     }
   }
@@ -232,18 +256,18 @@ export function createLiveController(
       reportError("The live session sent malformed JSON.");
       return;
     }
+    if (typeof event.event_id === 'string') {
+      if (receivedEvents.has(event.event_id)) return;
+      receivedEvents.add(event.event_id);
+      if (receivedEvents.size > 2000) receivedEvents.delete(receivedEvents.values().next().value!);
+    }
 
     switch (event.type) {
       case "session.started":
         if (ready) return;
         ready = true;
         startupTimer = clearTimer(startupTimer);
-        callbacks.onStatus("started");
-        sessionTimer = setTimeout(() => {
-          if (!isCurrent(runGeneration)) return;
-          callbacks.onStatus("session limit reached; finalizing");
-          stop();
-        }, SESSION_TIMEOUT_MS);
+        activeStatus();
         break;
       case "session.input_transcript.delta":
         addTranscript("user", event);
@@ -252,6 +276,7 @@ export function createLiveController(
         addTranscript("assistant", event);
         break;
       case "session.delegation.created": {
+        if (closing || !ready) return;
         const target = event.delegation;
         const delegation =
           target && typeof target === "object"
@@ -261,7 +286,7 @@ export function createLiveController(
           delegation?.target === "client" && typeof delegation.id === "string"
             ? delegation.id
             : null;
-        if (!id) return;
+        if (!id || handledDelegations.has(id) || pendingDelegation?.id === id) return;
         delegationTimer = clearTimer(delegationTimer);
         pendingDelegation = { id, generation: runGeneration };
         scheduleDelegation();
@@ -295,7 +320,7 @@ export function createLiveController(
         clearTimeout(timer);
         connection.removeEventListener("icegatheringstatechange", onChange);
         signal?.removeEventListener("abort", onAbort);
-        error ? reject(error) : resolve();
+        if (error) reject(error); else resolve();
       };
       const onAbort = () => finish(new DOMException("Connection superseded", "AbortError"));
       const onChange = () => {
@@ -317,6 +342,10 @@ export function createLiveController(
     releaseResources();
     const runGeneration = generation;
     fragments = [];
+    consumedFragmentCount = 0;
+    consumedEndMs = -1;
+    handledDelegations.clear();
+    receivedEvents.clear();
     emitTranscript();
     callbacks.onStatus("checking availability");
     connectionAbort = new AbortController();
@@ -345,12 +374,25 @@ export function createLiveController(
       if (!isCurrent(runGeneration)) return;
 
       callbacks.onStatus("requesting microphone");
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (!navigator.mediaDevices?.getUserMedia) throw new Error('Microphone access is unavailable in this browser. Open the HTTPS site in a browser with microphone support.');
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: {
+        echoCancellation: true, noiseSuppression: true, autoGainControl: true,
+      } });
       if (!isCurrent(runGeneration)) {
         stream.getTracks().forEach((track) => track.stop());
         return;
       }
       microphone = stream;
+      const tracks = stream.getAudioTracks();
+      if (!tracks.some(track => track.readyState === 'live')) throw new Error('The microphone did not provide an active audio track. Check your input device and try again.');
+      for (const track of tracks) {
+        track.addEventListener('ended', () => {
+          if (isCurrent(runGeneration) && !closing) failConnection('The microphone stopped. Reconnect your input device, then tap the microphone to try again.');
+        });
+        for (const type of ['mute', 'unmute']) track.addEventListener(type, () => {
+          if (isCurrent(runGeneration)) activeStatus();
+        });
+      }
       peer = new RTCPeerConnection();
       audio = new Audio();
       audio.autoplay = true;
@@ -364,11 +406,18 @@ export function createLiveController(
       peer.addEventListener("connectionstatechange", () => {
         if (!isCurrent(runGeneration) || closing || !peer) return;
         if (peer.connectionState === "failed") {
-          callbacks.onStatus("disconnected; final usage unconfirmed");
-          releaseResources();
+          failConnection('The voice connection was lost. Tap the microphone to reconnect.');
+        } else if (peer.connectionState === 'disconnected') {
+          activeStatus();
+          if (disconnectTimer === null) disconnectTimer = setTimeout(() => {
+            if (isCurrent(runGeneration) && !closing && peer?.connectionState === 'disconnected') failConnection('The voice connection was lost. Tap the microphone to reconnect.');
+          }, DISCONNECT_TIMEOUT_MS);
+        } else if (peer.connectionState === 'connected') {
+          disconnectTimer = clearTimer(disconnectTimer);
+          activeStatus();
         }
       });
-      for (const track of stream.getTracks()) peer.addTrack(track, stream);
+      for (const track of tracks) peer.addTrack(track, stream);
 
       channel = peer.createDataChannel("oai-events");
       channel.addEventListener("message", (message) => {
@@ -376,6 +425,7 @@ export function createLiveController(
       });
       channel.addEventListener("close", () => {
         if (!isCurrent(runGeneration)) return;
+        if (!closing) reportError('The voice connection closed. Tap the microphone to reconnect.');
         callbacks.onStatus("disconnected; final usage unconfirmed");
         releaseResources();
       });
@@ -416,8 +466,11 @@ export function createLiveController(
       if (!ready) callbacks.onStatus("awaiting session start");
     } catch (error) {
       if (!isCurrent(runGeneration)) return;
-      const message =
-        error instanceof Error ? error.message : "Live voice failed to start.";
+      const name = error instanceof Error ? error.name : '';
+      const message = name === 'NotAllowedError' ? 'Microphone permission was denied. Allow microphone access for this site, then try again.'
+        : name === 'NotFoundError' ? 'No microphone was found. Connect an input device and try again.'
+        : name === 'NotReadableError' ? 'The microphone could not be opened. Check whether another app or your device settings are blocking it.'
+        : error instanceof Error ? error.message : "Live voice failed to start.";
       reportError(message);
       callbacks.onStatus("error");
       releaseResources();
@@ -428,7 +481,6 @@ export function createLiveController(
     if (disposed || closing) return;
     pendingDelegation = null;
     delegationTimer = clearTimer(delegationTimer);
-    sessionTimer = clearTimer(sessionTimer);
     if (!ready || channel?.readyState !== "open") {
       callbacks.onStatus("stopped");
       releaseResources();

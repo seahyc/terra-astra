@@ -5,6 +5,7 @@ import { build } from "esbuild";
 import { readFile } from "node:fs/promises";
 import { parseEnv } from "node:util";
 import { runProbe, SEA_DATASET_INVENTORY, redact } from "./probe-agents.mjs";
+import { createModelAnswerService } from '../../lib/terra/server/model-answer.mjs';
 import { createImageAnswerService } from './image-answer.mjs';
 import { createAnswerRouter } from '../../lib/terra/server/answer-router.mjs';
 import { sceneInventory } from '../../lib/terra/server/scene-context.mjs';
@@ -37,6 +38,9 @@ const { planQuestion, worldAnswerSchema } = await import(`data:text/javascript;b
 const answerQuestion = createAnswerRouter({ worldAnswerSchema, runProbe, fastModel: process.env.OPENAI_FAST_MODEL || 'gpt-5.6-luna', answerModel: process.env.OPENAI_ANSWER_MODEL || 'gpt-5.6-terra' });
 let activeAgent = null;
 const imageAnswers = createImageAnswerService();
+const modelBundle = await build({ entryPoints: [new URL('../../lib/terra/sculptures/procedural-model.ts', import.meta.url).pathname], bundle:true,platform:'node',format:'esm',write:false });
+const { validateProceduralModelRecipe } = await import(`data:text/javascript;base64,${Buffer.from(modelBundle.outputFiles[0].text).toString('base64')}`);
+const modelAnswers = createModelAnswerService({validateRecipe:validateProceduralModelRecipe});
 
 function send(res, status, body, type = "application/json; charset=utf-8") {
   const payload = Buffer.isBuffer(body) ? body : Buffer.from(typeof body === "string" ? body : JSON.stringify(body));
@@ -79,7 +83,7 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, await readFile(new URL('.' + url.pathname, import.meta.url)), "text/javascript; charset=utf-8");
     }
 
-    if (req.method === 'POST' && url.pathname === '/api/image') {
+    if (req.method === 'POST' && ['/api/image','/api/model'].includes(url.pathname)) {
       verifyOrigin(req);
       const apiKey = await resolveApiKey();
       if (!apiKey) return send(res, 503, { error: 'OpenAI API key is not configured' });
@@ -87,7 +91,7 @@ const server = http.createServer(async (req, res) => {
       const abortDisconnected = () => controller.abort(new Error('Client disconnected'));
       req.once('aborted', abortDisconnected); res.once('close', abortDisconnected);
       try {
-        const result = await imageAnswers.generate({ apiKey, input: await jsonBody(req, IMAGE_BODY_LIMIT), signal: controller.signal });
+        const result = await (url.pathname==='/api/model'?modelAnswers:imageAnswers).generate({ apiKey, input: await jsonBody(req, IMAGE_BODY_LIMIT), signal: controller.signal });
         if (!res.destroyed) return send(res, 200, result);
       } finally { req.off('aborted', abortDisconnected); res.off('close', abortDisconnected); }
       return;
@@ -108,7 +112,8 @@ const server = http.createServer(async (req, res) => {
         body: JSON.stringify({
           session: {
             model: "gpt-live-1",
-            instructions: "Be concise and factual. You are the voice of an interactive Earth. Help the user explore the world through geography, history and science. Delegate every substantive question or request to show, compare, focus or measure a place to the client backend. Acknowledge briefly then let the backend move the globe and supply measured evidence. Do not invent values or claim camera movement before the backend confirms it. Explain in short spoken sentences, referring to the visible highlights. Let users interrupt and change places. Treat returned backend text as factual evidence to explain aloud; never claim that audio was heard.",
+            audio: {output: {voice: "ripple"}},
+            instructions: "Be concise and factual. You are the voice of an interactive Earth. Speak with a playful, lightly cheeky delivery and occasional dry humour. Keep answers concise and useful; skip jokes for serious or sensitive topics. Help the user explore the world through geography, history and science. Delegate every substantive question or request to show, compare, focus or measure a place to the client backend. Acknowledge briefly then let the backend move the globe and supply measured evidence. Do not invent values or claim camera movement before the backend confirms it. Explain in short spoken sentences, referring to the visible highlights. Let users interrupt and change places. Treat returned backend text as factual evidence to explain aloud; never claim that audio was heard.",
             delegation: { type: "client" },
           },
           transport: { type: "webrtc", sdp: body.sdp },
