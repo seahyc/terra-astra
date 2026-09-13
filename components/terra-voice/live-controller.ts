@@ -333,6 +333,7 @@ export function createLiveController(
         cache: "no-store",
       });
       const status: unknown = await statusResponse.json();
+      if (status && typeof status === 'object' && (status as Record<string, unknown>).signedIn === false) throw new Error('Sign in with ChatGPT to use voice.');
       if (
         !statusResponse.ok ||
         !status ||

@@ -19,8 +19,7 @@ const noop = () => {};
 const ctx = new Proxy({ createRadialGradient: () => ({ addColorStop: noop }) }, { get: (o, key) => o[key] ?? noop, set: (o, key, value) => { o[key] = value; return true; } });
 let graphicsLostCallback=null;
 class Canvas {
-  style = {}; dataset = {}; width = 1; height = 1;
-  appendChild() {} replaceChildren() {} querySelectorAll() { return []; }
+  style = {}; width = 1; height = 1;
   getContext(type) { return type === '2d' ? ctx : null; }
   addEventListener(type,callback) {if(type==='webglcontextlost')graphicsLostCallback=callback;} removeEventListener() {} setAttribute() {} remove() {}
 }
@@ -63,6 +62,10 @@ assert.equal((await complete({type:'focusLayer',layer:'satellites',enabled:false
 assert.equal((await complete({type:'focusLayer',layer:'satellites',enabled:true})).ok,true);tick();assert.equal(shells().find(o=>o.userData.shell==='satellites').visible,true);
 assert.equal((await complete({type:'flyTo',targetId:'new-york'})).ok,true);assert.equal(engine.worldState().targetId,'new-york');assert.equal(engine.worldState().tier,'city');assert.equal(stages.at(-1),'city');
 assert.ok(Math.abs(Math.atan2(rendered.camera.position.y,Math.hypot(rendered.camera.position.x,rendered.camera.position.z))*180/Math.PI-40.721562)<.01,'New York camera reaches true target');
+const aerialResult=await complete({type:'setPerspective',perspective:'aerial'});const aerialPose=rendered.camera.position.clone();assert.equal(aerialResult.ok,true);assert.equal(engine.worldState().targetId,'new-york');assert.equal(engine.worldState().tier,'city');assert.equal(engine.worldState().perspective,'aerial');
+const horizonResult=await complete({type:'setPerspective',perspective:'horizon'});const horizonPose=rendered.camera.position.clone();assert.equal(horizonResult.ok,true);assert.equal(engine.worldState().targetId,'new-york');assert.equal(engine.worldState().tier,'city');assert.equal(engine.worldState().perspective,'horizon');assert.ok(horizonPose.distanceTo(aerialPose)>.001,'City horizon changes the real camera projection without leaving the city');
+const cutawayResult=await complete({type:'setPerspective',perspective:'cutaway'});const cutawayPose=rendered.camera.position.clone();assert.equal(cutawayResult.ok,true);assert.equal(engine.worldState().targetId,'new-york');assert.equal(engine.worldState().tier,'planet','City cutaway pulls back to an Earth-interior framing');assert.equal(engine.worldState().perspective,'cutaway');assert.ok(Math.abs(Math.atan2(cutawayPose.y,Math.hypot(cutawayPose.x,cutawayPose.z))*180/Math.PI-40.721562)<.01,'Cutaway retains the New York anchor');assert.ok(rendered.scene.userData.spatial.cut>.99,'Cutaway acknowledgement waits for the real cut plane');
+await complete({type:'setScale',tier:'city'});
 assert.equal(shells().every(o=>!o.visible),true,'Global shells fade by city scale');
 const ny=objects().filter(o=>o.userData.urban==='new-york');assert.equal(ny.length,2);assert.ok(ny.every(o=>o.visible),'Traffic and soft activity visible');
 for(const cloud of ny){const a=cloud.geometry.getAttribute('position');for(let i=0;i<a.count;i++)assert.ok(Math.abs(Math.hypot(a.getX(i),a.getY(i),a.getZ(i))-1.00003)<1e-6);}
@@ -78,31 +81,19 @@ engine.view('cutaway');tick();assert.equal(engine.worldState().targetId,'challen
 assert.equal((await complete({type:'setScale',tier:'street'})).ok,false,'Unsupported trench street scale rejected');assert.equal(engine.worldState().tier,'region');
 await complete({type:'resetView'});assert.equal(engine.worldState().targetId,null);assert.equal(engine.worldState().tier,'planet');assert.ok(Math.abs(sea.material.uniforms.opacity.value-1.15)<1e-6,'Planet ocean material returns to unchanged exposure');
 assert.equal((await complete({type:'flyTo',targetId:'missing'})).ok,false);
+const tokyo={type:'flyToLocation',name:'Tokyo',latitude:35.6762,longitude:139.6503,span:8};
+assert.equal((await complete(tokyo)).ok,true);assert.equal(engine.worldState().targetId,'location');assert.equal(engine.worldState().tier,'region');assert.equal(stages.at(-1),'orbit');assert.equal(engine.worldState().location.name,'Tokyo');
+await complete({type:'setPerspective',perspective:'aerial'});
+assert.ok(Math.abs(Math.atan2(rendered.camera.position.y,Math.hypot(rendered.camera.position.x,rendered.camera.position.z))*180/Math.PI-tokyo.latitude)<.01,'Arbitrary camera reaches Tokyo latitude');
+assert.ok(Math.abs(Math.atan2(rendered.camera.position.x,rendered.camera.position.z)*180/Math.PI-tokyo.longitude)<.01,'Arbitrary camera reaches Tokyo longitude');
+assert.equal((await complete({type:'setScale',tier:'street'})).ok,false,'Arbitrary anchors cannot pretend to load curated street detail');assert.equal(engine.worldState().tier,'region');
+for(const perspective of ['horizon','cutaway','aerial']){assert.equal((await complete({type:'setPerspective',perspective})).ok,true);assert.equal(engine.worldState().location.name,'Tokyo');}
+assert.ok(Math.abs(Math.atan2(rendered.camera.position.y,Math.hypot(rendered.camera.position.x,rendered.camera.position.z))*180/Math.PI-tokyo.latitude)<.01,'Perspective changes retain arbitrary geographic anchor');
+await complete({type:'setScale',tier:'planet'});assert.equal(engine.worldState().location.name,'Tokyo');await complete({type:'setScale',tier:'region'});assert.equal(engine.worldState().location.name,'Tokyo');
+for(const invalid of [{...tokyo,latitude:NaN},{...tokyo,longitude:181},{...tokyo,span:0},{...tokyo,name:''}])assert.equal((await complete(invalid)).ok,false,'Invalid arbitrary location rejected');
+const pendingTokyo=engine.command(tokyo);await complete({type:'resetView'});assert.equal((await pendingTokyo).ok,true);assert.equal(engine.worldState().location,undefined);assert.equal(engine.worldState().targetId,null,'Queued reset clears arbitrary anchor');
+
 engine.configure({...baseOptions,motion:true});const flight=engine.command({type:'flyTo',targetId:'challenger-deep'});for(let i=0;i<5;i++){await Promise.resolve();tick(100);}host.clientWidth=390;host.clientHeight=844;resizeCallback();for(let i=0;i<80;i++){tick(100);await Promise.resolve();}assert.equal((await flight).ok,true);assert.ok(Math.abs(rendered.camera.position.distanceTo(trenchAnchor)-.62)<1e-6,'In-flight regional resize retains its intended horizon altitude');engine.region('indonesia');assert.equal(engine.worldState().targetId,null,'Explicit depth preset clears old command target');
-// Rebase integration: question scenes share the camera with the new WorldCommand API.
-engine.configure(baseOptions);
-const evidence={revision:1,view:'map',perspective:'oblique',bounds:{west:103.865,east:103.869,south:13.4105,north:13.4145},sculpture:'angkor-wat',measurement:null,evidence:[],traces:[],labels:[]};
-const present=engine.presentEvidenceScene(evidence,new AbortController().signal);
-for(let i=0;i<6;i++){await new Promise(resolve=>setImmediate(resolve));tick(100);}
-assert.equal((await present).ready,true,'Paused evidence presentation settles');
-assert.equal(engine.worldState().targetId,null,'Evidence clears stale world target');
-assert.ok(Math.abs(rendered.camera.position.distanceTo(new THREE.Vector3(Math.cos(13.4125*Math.PI/180)*Math.sin(103.867*Math.PI/180),Math.sin(13.4125*Math.PI/180),Math.cos(13.4125*Math.PI/180)*Math.cos(103.867*Math.PI/180)))-.00068)<1e-6,'Sculpture retains close camera framing');
-assert.ok(objects().some(o=>o.userData.sampleBudget===14000&&o.visible),'Sculpture renders through shared cloud material');
-assert.equal((await complete({type:'flyTo',targetId:'new-york'})).ok,true,'World navigation resumes after question scene');
-assert.ok(objects().filter(o=>o.userData.sampleBudget===14000).every(o=>!o.visible),'World navigation clears sculpture');
-engine.configure({...baseOptions,motion:true});
-const moving=engine.presentEvidenceScene({...evidence,revision:2},new AbortController().signal);
-for(let i=0;i<5;i++){await new Promise(resolve=>setImmediate(resolve));tick(100);}
-assert.ok(engine.worldState().busy,'Evidence journey publishes busy state');
-const reset=engine.command({type:'resetView'});
-for(let i=0;i<160;i++){await Promise.resolve();tick(100);}
-assert.equal((await moving).ready,true);assert.equal((await reset).ok,true,'Queued reset resumes after evidence readiness');
-engine.configure(baseOptions);
-const interrupted=engine.presentEvidenceScene({...evidence,revision:3},new AbortController().signal);
-for(let i=0;i<6;i++){await new Promise(resolve=>setImmediate(resolve));tick(100);}
-await interrupted;engine.replayGenesis();tick();
-assert.ok(objects().filter(o=>o.userData.sampleBudget===14000).every(o=>!o.visible),'Genesis replay clears question sculpture');
-engine.configure({...baseOptions,motion:true});
 const lostCommand=engine.command({type:'flyTo',targetId:'singapore'});for(let i=0;i<6;i++){await Promise.resolve();tick(100);}assert.ok(graphicsLostCallback);graphicsLostCallback({preventDefault(){}});assert.equal((await lostCommand).ok,false,'Graphics loss settles active command');assert.equal((await engine.command({type:'resetView'})).ok,false,'Graphics loss rejects later commands');
 engine.dispose();assert.equal(frame,null);
 console.log('PASS: distinct orbital/aircraft shells with trails; real pause of positions; layer toggles; serialized target/scale commands; sourced NYC detail and activity; SG return; Mariana region; reset; invalid command. Inert Canvas lifecycle, not pixel/performance evidence.');

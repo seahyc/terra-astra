@@ -1,13 +1,26 @@
 /** User-facing release history. Keep historical entries tied to their saved milestones. */
-export const currentVersion = '0.6.1';
+export const currentVersion = '0.7.0';
 
 export const releases = [
+  {
+    version: '0.7.0',
+    date: '2026-09-13',
+    dateLabel: '13 September 2026',
+    title: 'Ask the Earth',
+    milestone: 'This build',
+    changes: [
+      'Typed and spoken questions share the original Earth. Geographic answers can travel beyond the three examples, with aerial, horizon and cutaway perspectives.',
+      'Everyday questions get a fast answer; harder questions use stronger reasoning or source searches. In-depth research still brings together independent agents. Generated images add context when an illustration helps.',
+      'A compact You / Astra conversation replaces the older Explore and fictional-story controls. The globe stays open to visitors; ChatGPT sign-in enables online answers, voice and images.',
+    ],
+    review: 'TypeScript, build and automated navigation, evidence, streaming, image and hosted-API checks pass. The original globe and typed navigation were checked in a browser. Live API checks cover ordinary questions, source searches and generated images. Hosted microphone/audio and physical-phone performance require separate verification. Geography and movement layers retain their existing source limitations.',
+  },
   {
     version: '0.6.1',
     date: '2026-09-13',
     dateLabel: '13 September 2026',
     title: 'A clearer view into the deep',
-    milestone: 'This build',
+    milestone: 'Previous release',
     changes: [
       'Challenger Deep arrives in the existing angled Horizon view, with clearer seafloor particles at regional scale.',
       'The terrain selector names the active destination. Regional approaches use matching journey language.',

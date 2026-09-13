@@ -82,3 +82,13 @@ Semantic versions label the experience; Sites version numbers identify saved dep
 6. Confirm terminal deployment success before saying it is live. Handoff the semantic version, URL, changes and outstanding limits.
 
 For rollback, select the known saved Sites version and redeploy it when authorized. Preserve newer history; do not force-reset the source branch. There is no simultaneous playable version comparison in this release.
+
+
+## v0.7.0 — 2026-09-13 — Ask the Earth
+- Integrates typed and Live voice questions into the original globe through the shared WorldCommand interface; supports aerial, horizon and cutaway choices.
+- Routes ordinary questions through Luna, stronger reasoning and live source searches through Terra, and explicit in-depth research through native Astra delegation. Optional generated answer images use Flare.
+- Extends the shared camera boundary with validated regional geographic anchors, preserving the existing globe and detailed Singapore/New York scenes.
+- Removes obsolete Explore/depth panels and fictional-person controls; fixes removed-state references and preserves the renderer coordinate callback.
+- Adds a hosted Fetch API for signed-in ChatGPT users, with server-only credentials, bounded requests, cancellation, and Worker-compatible research imports. Public visitors can explore the globe without signing in.
+- Validation: TypeScript, build, world/navigation/evidence/stream/image tests and hosted API authentication, body limits, cancellation, streaming and credential filtering. Local globe/input/navigation were checked in a browser. Live API smoke checks cover general questions (about 2.5–4 seconds), official-source search (about 9 seconds) and generated image completion. Hosted microphone/audio and physical-phone performance remain separate verification tasks.
+- Preserves previous Git tags, source history and saved Sites milestones. The new release is for YC's independent Site.
