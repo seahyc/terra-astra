@@ -19,6 +19,7 @@ import { WorldNavigation } from './world-navigation';
 import { connectWorldNavigator, publishWorldState, sendWorldCommand } from '@/lib/world/bridge';
 import { WORLD_TARGETS, type GenesisState, type WorldState } from '@/lib/world/commands';
 import specialStyles from './special-destinations.module.css';
+import GlobeVoice from '@/components/terra-voice/GlobeVoice';
 
 const initialOptions:ViewOptions={glow:1.15,shimmer:1.1,depth:true,threads:.55,density:.85,borders:false,motion:true};
 const formatCoordinate=(n:number,a:string,b:string)=>`${Math.abs(n).toFixed(2)}° ${n>=0?a:b}`;
@@ -125,5 +126,6 @@ export default function TerraExperience(){
    </SheetContent>
   </Sheet>
   <noscript><p className="error-message">Enable JavaScript to explore Terra Astra.</p></noscript>
+  {ready&&!genesis.busy&&!astra?<GlobeVoice ready={ready}/>:null}
  </main>;
 }

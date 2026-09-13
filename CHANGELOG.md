@@ -3,10 +3,11 @@
 Semantic versions label the experience; Sites version numbers identify saved deployment packages. They are separate counters. `lib/terra/releases.ts` is the source for the public history page and current build badge. Git tags identify exact source snapshots; native Sites records are authoritative for save/deploy status.
 
 ## v0.8 — 2026-09-13 — Different places, different motion
+- Selectively adapts YC f3ea241 Live transport and hosted session/answer endpoints, preserving existing renderer and command payloads. Typed catalogue requests acknowledge, move immediately, then explain. Existing authentication remains; server OPENAI_API_KEY is required. No models, database, new renderer, arbitrary-coordinate API or extra datasets from YC’s branch are included. Native microphone/audio remains unverified while the public server key is absent.
 - Selectively adapts the Palm Jumeirah and Makkah spike from 4023b278d664f5d827d188413f1e7c71376b20dc onto current v0.7.1. No wholesale stale-branch merge.
 - Adds lazy, bounded OSM snapshots and shared destination hooks. Palm retains mapped trunk/frond/crescent geometry, Dubai mainland and curated warm road activity. Makkah retains mosque context, a mapped Kaaba anchor, soft counter-clockwise collective flow and persistent mobile disclosure.
 - Preserves current Genesis, warm SG/NY preparation, 1,100ms same-target scales, FIFO command results, existing destinations and all richness layers. Commands gain two target IDs; payloads remain compatible.
-- New destination activity is explicitly illustrative, not live human tracking. No new renderer, framework, backend or live provider.
+- New destination activity is explicitly illustrative, not live human tracking. No new renderer, framework or tracking provider.
 - TypeScript, special-destination lifecycle/geography/CCW, existing world, response and Genesis checks pass. Native acceptance and publication evidence are recorded in docs/special-destinations/INTEGRATION-GATE.md. Physical-phone performance remains unverified.
 
 ## v0.7.1 — 2026-09-13 — Stay with the place you chose

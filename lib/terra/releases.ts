@@ -12,8 +12,9 @@ export const releases = [
       'Palm Jumeirah adds its mapped trunk, fronds and crescent, surrounding Dubai coast, and warm activity along curated local roads.',
       'Makkah adds Masjid al-Haram context and a source-derived Kaaba anchor. Soft collective movement circulates counter-clockwise, with a persistent interpretive-flow disclosure.',
       'Both destinations use the existing world-command interface, renderer and fast scale navigation. Genesis, Singapore, New York and Challenger Deep remain connected.',
+      'YC’s Live voice transport and typed navigation share the existing five-target WorldCommand path. A short acknowledgement precedes movement, with context after arrival.',
     ],
-    review: 'These destinations use bounded OpenStreetMap snapshots. Activity is procedural and illustrative, never live tracking, crowd counts or route guidance. Makkah is an abstract celestial study, not a photorealistic or architectural survey. Physical-phone performance remains unverified. The v0.7.1 source and saved publication remain available as the fallback.',
+    review: 'These destinations use bounded OpenStreetMap snapshots. Activity is procedural and illustrative, never live tracking, crowd counts or route guidance. Makkah is an abstract celestial study, not a photorealistic or architectural survey. Physical-phone performance remains unverified. Live audio and general answers require server configuration and ChatGPT sign-in; a successful microphone conversation has not yet been verified on this publication. Typed catalogue navigation works without those services. The v0.7.1 source and saved publication remain available as the fallback.',
   },
   {
     version: '0.7.1',
