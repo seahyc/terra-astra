@@ -129,3 +129,8 @@ For rollback, select the known saved Sites version and redeploy it when authoriz
 - Adds a hosted Fetch API for signed-in ChatGPT users, with server-only credentials, bounded requests, cancellation, and Worker-compatible research imports. Public visitors can explore the globe without signing in.
 - Validation: TypeScript, build, world/navigation/evidence/stream/image tests and hosted API authentication, body limits, cancellation, streaming and credential filtering. Local globe/input/navigation were checked in a browser. Live API smoke checks cover general questions (about 2.5–4 seconds), official-source search (about 9 seconds) and generated image completion. Hosted microphone/audio and physical-phone performance remain separate verification tasks.
 - Preserves previous Git tags, source history and saved Sites milestones. The new release is for YC's independent Site.
+
+## v0.7.1 — 2026-09-13 — Hosted answers
+- Separates the local native-Agents probe CLI from the Worker-safe module, removing a file URL evaluated during hosted API startup.
+- Fixes the production `/api/terra/status` and answer routes throwing before request handling. The v0.7.0 public globe loaded correctly but its hosted API did not.
+- Preserves the source and saved Sites milestone for v0.7.0.
