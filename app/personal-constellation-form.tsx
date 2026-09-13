@@ -95,7 +95,6 @@ export function PersonalConstellationForm({ initialValue, disabled, onSubmit, on
   return <form className={styles.form} onSubmit={submit} aria-labelledby={`${id}-title`} aria-busy={disabled}>
     <div className={styles.heading}>
       <h2 id={`${id}-title`}>Your place in the stars.</h2>
-      <p>Three places. One constellation that could only be yours.</p>
     </div>
     <div className={styles.fields}>
       {personalPlaceRoles.map((role, index) => <div className={styles.field} key={`${resetKey}-${index}`}>

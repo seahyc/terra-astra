@@ -50,7 +50,7 @@ export default function TerraExperience(){
    <button hidden data-star="singapore" className="map-star destination-star" onClick={descend} disabled={loadingCity}><span className="star-anchor" aria-hidden="true">✦</span><span className="marker-label">Singapore <ArrowDown size={12}/></span></button>
    {stories.map(s=><button hidden key={s.id} data-star={s.id} className="map-star human-star" onClick={()=>choose(s.id)} aria-label={`Discover ${s.name}'s constellation`}><span className="star-anchor" aria-hidden="true">✦</span><span className="marker-label">{s.name}</span></button>)}
    {[0,1,2].map(i=><div hidden key={i} data-star={`place-${i}`} className="map-star place-marker"><span className="star-anchor" aria-hidden="true">✦</span><span className="marker-label">{story?.places[i]?.label}</span></div>)}
-   {[0,1,2].map(i=><div hidden key={`personal-${i}`} data-star={`personal-${i}`} className="map-star place-marker personal-marker"><span className="marker-label">{personalPlaces?.[i]?.label}</span></div>)}
+   {[0,1,2].map(i=><div hidden key={`personal-${i}`} data-star={`personal-${i}`} className="map-star place-marker personal-marker"><span className="marker-label">{personalPlaces?.[i]?.label.split(',')[0]}</span></div>)}
   </div>
   {!ready&&!error?<p className="loading-message" role="status">Gathering the constellations<span className="loading-dots">…</span></p>:null}
   {error?<div className="error-message" role="alert"><p>{error}</p><button onClick={()=>ready&&!fatalError?setError(''):location.reload()}>{fatalError?'Restart journey':ready?'Dismiss':'Try again'}</button></div>:null}

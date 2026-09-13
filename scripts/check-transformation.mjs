@@ -92,8 +92,13 @@ for(let i=0;i<35;i++)tick(200);assert.equal(states.at(-1).phase,'astra');
 engine.transform(false);engine.configure(options);tick();assert.equal(states.at(-1).phase,'terra','Motion off completes a running transition');
 host.clientWidth=390;host.clientHeight=844;resizeCallback();engine.transform(true);tick();
 const personal=rendered.scene.children.flatMap(o=>o.children).find(o=>o.userData.personal&&o instanceof THREE.Points);
-for(let i=0;i<3;i++){result.fromBufferAttribute(personal.geometry.getAttribute('astraPosition'),i).project(rendered.camera);const y=(-result.y*.5+.5)*844;assert.ok(Math.abs(result.x)<.95&&y>70&&y<550,'Personal stars fit above the phone form area');}
-engine.personal(null);engine.transform(false);tick();await engine.descend();tick();assert.equal(stages.at(-1),'city','Singapore journey remains reachable');engine.orbit();tick();assert.equal(stages.at(-1),'orbit');
+for(let i=0;i<3;i++){result.fromBufferAttribute(personal.geometry.getAttribute('astraPosition'),i).project(rendered.camera);const y=(-result.y*.5+.5)*844;assert.ok(Math.abs(result.x)<.95&&y>70&&y<330,'Personal stars fit above the phone form area');}
+engine.transform(false);tick();const arrivalsBeforeCity=personalArrivals;
+await engine.descend();tick();assert.equal(stages.at(-1),'city','Singapore journey remains reachable');
+assert.ok(rendered.scene.children.flatMap(o=>o.children).some(o=>o.userData.personal&&o instanceof THREE.Points),'Personal constellation memory survives Singapore');
+engine.orbit();tick();assert.equal(stages.at(-1),'orbit');engine.transform(true);tick();engine.transform(false);tick();
+assert.equal(personalArrivals,arrivalsBeforeCity+1,'Personal payoff repeats after Singapore');
+engine.personal(null);tick();assert.ok(!rendered.scene.children.flatMap(o=>o.children).some(o=>o.userData.personal&&o instanceof THREE.Points),'Explicit clear removes personal stars');
 engine.dispose();assert.equal(frame,null);
 assert.equal(transformationEase(0),0);assert.equal(transformationEase(1),1);
 console.log('PASS: 2,000 bounded reversible particle paths; exact source positions; global/date-line/antipodal/nearby personal triples; separated Astra stars; desktop/phone projection; serial camera actions; repeat/reverse; reduced-motion endpoints; single personal settlement; Singapore retained. Inert Canvas lifecycle, not pixel evidence.');

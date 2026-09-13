@@ -120,7 +120,6 @@ html{color-scheme:dark}.story-sheet,.about-dialog,.tuning-dialog{scrollbar-width
  .in-astra .view-tools{top:18%}
  .personal-ending{left:25px;top:90px;max-height:none;width:calc(100% - 50px);background:none}
  .personal-ending h1{font-size:36px;max-width:340px;margin-bottom:13px}
- .personal-ending h1 br:first-child{display:none}
  .personal-ending>p{font-size:13px;max-width:300px;margin-bottom:0}
  .transformation-status{bottom:135px;left:23px;right:23px;transform:none;font-size:13px}
  .in-astra .journey-index{display:none}
