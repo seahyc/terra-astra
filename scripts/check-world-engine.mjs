@@ -19,7 +19,8 @@ const noop = () => {};
 const ctx = new Proxy({ createRadialGradient: () => ({ addColorStop: noop }) }, { get: (o, key) => o[key] ?? noop, set: (o, key, value) => { o[key] = value; return true; } });
 let graphicsLostCallback=null;
 class Canvas {
-  style = {}; width = 1; height = 1;
+  style = {}; dataset = {}; width = 1; height = 1;
+  appendChild() {} replaceChildren() {} querySelectorAll() { return []; }
   getContext(type) { return type === '2d' ? ctx : null; }
   addEventListener(type,callback) {if(type==='webglcontextlost')graphicsLostCallback=callback;} removeEventListener() {} setAttribute() {} remove() {}
 }
@@ -78,6 +79,30 @@ assert.equal((await complete({type:'setScale',tier:'street'})).ok,false,'Unsuppo
 await complete({type:'resetView'});assert.equal(engine.worldState().targetId,null);assert.equal(engine.worldState().tier,'planet');assert.ok(Math.abs(sea.material.uniforms.opacity.value-1.15)<1e-6,'Planet ocean material returns to unchanged exposure');
 assert.equal((await complete({type:'flyTo',targetId:'missing'})).ok,false);
 engine.configure({...baseOptions,motion:true});const flight=engine.command({type:'flyTo',targetId:'challenger-deep'});for(let i=0;i<5;i++){await Promise.resolve();tick(100);}host.clientWidth=390;host.clientHeight=844;resizeCallback();for(let i=0;i<80;i++){tick(100);await Promise.resolve();}assert.equal((await flight).ok,true);assert.ok(Math.abs(rendered.camera.position.distanceTo(trenchAnchor)-.62)<1e-6,'In-flight regional resize retains its intended horizon altitude');engine.region('indonesia');assert.equal(engine.worldState().targetId,null,'Explicit depth preset clears old command target');
+// Rebase integration: question scenes share the camera with the new WorldCommand API.
+engine.configure(baseOptions);
+const evidence={revision:1,view:'map',perspective:'oblique',bounds:{west:103.865,east:103.869,south:13.4105,north:13.4145},sculpture:'angkor-wat',measurement:null,evidence:[],traces:[],labels:[]};
+const present=engine.presentEvidenceScene(evidence,new AbortController().signal);
+for(let i=0;i<6;i++){await new Promise(resolve=>setImmediate(resolve));tick(100);}
+assert.equal((await present).ready,true,'Paused evidence presentation settles');
+assert.equal(engine.worldState().targetId,null,'Evidence clears stale world target');
+assert.ok(Math.abs(rendered.camera.position.distanceTo(new THREE.Vector3(Math.cos(13.4125*Math.PI/180)*Math.sin(103.867*Math.PI/180),Math.sin(13.4125*Math.PI/180),Math.cos(13.4125*Math.PI/180)*Math.cos(103.867*Math.PI/180)))-.00068)<1e-6,'Sculpture retains close camera framing');
+assert.ok(objects().some(o=>o.userData.sampleBudget===14000&&o.visible),'Sculpture renders through shared cloud material');
+assert.equal((await complete({type:'flyTo',targetId:'new-york'})).ok,true,'World navigation resumes after question scene');
+assert.ok(objects().filter(o=>o.userData.sampleBudget===14000).every(o=>!o.visible),'World navigation clears sculpture');
+engine.configure({...baseOptions,motion:true});
+const moving=engine.presentEvidenceScene({...evidence,revision:2},new AbortController().signal);
+for(let i=0;i<5;i++){await new Promise(resolve=>setImmediate(resolve));tick(100);}
+assert.ok(engine.worldState().busy,'Evidence journey publishes busy state');
+const reset=engine.command({type:'resetView'});
+for(let i=0;i<160;i++){await Promise.resolve();tick(100);}
+assert.equal((await moving).ready,true);assert.equal((await reset).ok,true,'Queued reset resumes after evidence readiness');
+engine.configure(baseOptions);
+const interrupted=engine.presentEvidenceScene({...evidence,revision:3},new AbortController().signal);
+for(let i=0;i<6;i++){await new Promise(resolve=>setImmediate(resolve));tick(100);}
+await interrupted;engine.replayGenesis();tick();
+assert.ok(objects().filter(o=>o.userData.sampleBudget===14000).every(o=>!o.visible),'Genesis replay clears question sculpture');
+engine.configure({...baseOptions,motion:true});
 const lostCommand=engine.command({type:'flyTo',targetId:'singapore'});for(let i=0;i<6;i++){await Promise.resolve();tick(100);}assert.ok(graphicsLostCallback);graphicsLostCallback({preventDefault(){}});assert.equal((await lostCommand).ok,false,'Graphics loss settles active command');assert.equal((await engine.command({type:'resetView'})).ok,false,'Graphics loss rejects later commands');
 engine.dispose();assert.equal(frame,null);
 console.log('PASS: distinct orbital/aircraft shells with trails; real pause of positions; layer toggles; serialized target/scale commands; sourced NYC detail and activity; SG return; Mariana region; reset; invalid command. Inert Canvas lifecycle, not pixel/performance evidence.');

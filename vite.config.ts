@@ -52,6 +52,9 @@ export default defineConfig(async () => {
 
   return {
     server: {
+      proxy: {
+        '/api/terra': { target: 'http://127.0.0.1:5180', rewrite: (path: string) => path.replace('/api/terra', '/api') },
+      },
       ...(managedLinux ? { host: "0.0.0.0", allowedHosts: ["terminal.local"] } : {}),
       ...(isCodexSeatbeltSandbox ? { watch: { useFsEvents: false, usePolling: true } } : {}),
     },
