@@ -518,6 +518,8 @@ export function createLiveController(
       return;
     }
     closing = true;
+    microphone?.getTracks().forEach((track) => track.stop());
+    microphone = null;
     playbackAttempt += 1;
     callbacks.onPlaybackState?.("idle");
     callbacks.onStatus("finalizing");

@@ -28,21 +28,27 @@ function normalized(question: string): string {
   return question.toLowerCase().replace(/[’']s\b/g, '').replace(/[’']/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
 }
 
-function requestedTarget(text: string): { id: 'singapore' | 'new-york' | 'challenger-deep'; label: string } | null {
+type CatalogueTargetId = 'singapore' | 'new-york' | 'challenger-deep' | 'palm-jumeirah' | 'makkah';
+
+function requestedTarget(text: string): { id: CatalogueTargetId; label: string } | null {
   if (/\b(?:challenger deep|mariana trench|deepest (?:known )?(?:trench|point|place))\b/.test(text)) {
     return { id: 'challenger-deep', label: 'Challenger Deep' };
   }
   if (/\b(?:new york|nyc)\b/.test(text)) return { id: 'new-york', label: 'New York' };
   if (/\bsingapore\b/.test(text)) return { id: 'singapore', label: 'Singapore' };
+  if (/\bpalm jumeirah\b/.test(text)) return { id: 'palm-jumeirah', label: 'Palm Jumeirah' };
+  if (/\b(?:makkah|mecca|masjid al haram)\b/.test(text)) return { id: 'makkah', label: 'Makkah' };
   return null;
 }
 
 /** Exact supported place mention for starting a journey while a fuller answer is prepared. */
-export function catalogueTargetIdInQuestion(question: string): 'singapore' | 'new-york' | 'challenger-deep' | null {
+export function catalogueTargetIdInQuestion(question: string): CatalogueTargetId | null {
   const text = normalized(question);
   if (/\b(?:challenger deep|mariana trench)\b/.test(text)) return 'challenger-deep';
   if (/\b(?:new york|nyc)\b/.test(text)) return 'new-york';
   if (/\bsingapore\b/.test(text)) return 'singapore';
+  if (/\bpalm jumeirah\b/.test(text)) return 'palm-jumeirah';
+  if (/\b(?:makkah|mecca|masjid al haram)\b/.test(text)) return 'makkah';
   return null;
 }
 
@@ -146,6 +152,10 @@ export function planLiveNavigation(question: string): LiveNavigationPlan | null 
     if ((layer === 'urban' || wantsVibe) && target.id !== 'challenger-deep') commands.push({ type: 'focusLayer', layer: 'urban', enabled: !disablesLayer });
     const context = target.id === 'challenger-deep'
       ? 'Challenger Deep is the deepest known point in the ocean; its relief is exaggerated here so the depth can be seen.'
+      : target.id === 'palm-jumeirah'
+        ? 'Palm Jumeirah extends into the Persian Gulf as a palm-shaped island sheltered by a crescent breakwater.'
+      : target.id === 'makkah'
+        ? 'Makkah gathers around Masjid al-Haram in a mountain valley in western Saudi Arabia.'
       : target.id === 'new-york'
         ? 'New York gathers around a tidal harbour where islands, rivers and streets meet.'
         : 'Singapore sits beside the Strait of Malacca at a major meeting point of sea routes.';

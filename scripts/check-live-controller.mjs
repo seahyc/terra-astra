@@ -146,6 +146,7 @@ test('voice stays active beyond three minutes and still accepts questions until 
   t.mock.timers.tick(700);
   assert.deepEqual(h.delegations, [{ id: 'after-four-minutes', query: 'Show Singapore.' }]);
   h.controller.stop(); assert.equal(h.peer.channel.sent.at(-1).type, 'session.close');
+  assert.equal(h.track.readyState, 'ended', 'Stop releases the microphone before session close completes');
   h.receive({ type: 'session.closed' });
   assert.equal(h.track.readyState, 'ended'); assert.equal(h.peer.connectionState, 'closed');
 });

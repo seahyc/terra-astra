@@ -67,6 +67,33 @@ export const releases = [
     review: 'TypeScript, build and automated navigation, evidence, streaming, image and hosted-API checks pass. The original globe and typed navigation were checked in a browser. Live API checks cover ordinary questions, source searches and generated images. Hosted microphone/audio and physical-phone performance require separate verification. Geography and movement layers retain their existing source limitations.',
   },
   {
+    version: '0.9',
+    date: '2026-09-13',
+    dateLabel: '13 September 2026',
+    title: 'Ready for the journey',
+    milestone: 'Upstream release',
+    changes: [
+      'Stopping Live releases the microphone immediately while the session finishes closing. A disconnected session can restart from Talk.',
+      'Singapore and New York surroundings receive a small luminance adjustment to soften the change from their detailed cores.',
+      'The same Genesis, five destinations, living shells and WorldCommand interface remain in place.',
+    ],
+    review: 'GPT-Live-1 voice requires ChatGPT sign-in and microphone permission. The public v0.8 session successfully transcribed a spoken Palm Jumeirah request, moved the world and closed. This patch adds immediate microphone release and retains final session usage handling. Activity remains illustrative; physical-phone testing remains unverified.',
+  },
+  {
+    version: '0.8',
+    date: '2026-09-13',
+    dateLabel: '13 September 2026',
+    title: 'Different places, different motion',
+    milestone: 'Upstream release',
+    changes: [
+      'Palm Jumeirah adds its mapped trunk, fronds and crescent, surrounding Dubai coast, and warm activity along curated local roads.',
+      'Makkah adds Masjid al-Haram context and a source-derived Kaaba anchor. Soft collective movement circulates counter-clockwise, with a persistent interpretive-flow disclosure.',
+      'Both destinations use the existing world-command interface, renderer and fast scale navigation. Genesis, Singapore, New York and Challenger Deep remain connected.',
+      'YC’s Live voice transport and typed navigation share the existing five-target WorldCommand path. A short acknowledgement precedes movement, with context after arrival.',
+    ],
+    review: 'These destinations use bounded OpenStreetMap snapshots. Activity is procedural and illustrative, never live tracking, crowd counts or route guidance. Makkah is an abstract celestial study, not a photorealistic or architectural survey. Physical-phone performance remains unverified. Live audio and general answers require server configuration and ChatGPT sign-in; a successful microphone conversation has not yet been verified on this publication. Typed catalogue navigation works without those services. The v0.7.1 source and saved publication remain available as the fallback.',
+  },
+  {
     version: '0.7.1-upstream',
     date: '2026-09-13',
     dateLabel: '13 September 2026',

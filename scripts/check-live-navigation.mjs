@@ -3,7 +3,7 @@ import { registerHooks } from 'node:module';
 
 const root = new URL('../', import.meta.url).href;
 registerHooks({ resolve(specifier, context, next) {
-  if (context.parentURL?.startsWith(root) && specifier.startsWith('.') && !/\.[cm]?[jt]sx?$/.test(specifier)) return next(specifier + '.ts', context);
+  if (context.parentURL?.startsWith(root) && specifier.startsWith('.') && !/\.[^/]+$/.test(specifier)) return next(specifier + '.ts', context);
   return next(specifier, context);
 } });
 
@@ -12,6 +12,10 @@ const { catalogueTargetIdInQuestion, planLiveNavigation, suggestedPerspective, e
 assert.equal(catalogueTargetIdInQuestion('Why did New York grow around its harbour?'), 'new-york');
 assert.equal(catalogueTargetIdInQuestion('Explain Singapore’s geography.'), 'singapore');
 assert.equal(catalogueTargetIdInQuestion('How was the Mariana Trench formed?'), 'challenger-deep');
+assert.equal(catalogueTargetIdInQuestion('Why was Palm Jumeirah built?'), 'palm-jumeirah');
+assert.equal(catalogueTargetIdInQuestion('Tell me about Makkah.'), 'makkah');
+assert.equal(catalogueTargetIdInQuestion('What is the history of Mecca?'), 'makkah');
+assert.equal(catalogueTargetIdInQuestion('Describe Masjid al-Haram.'), 'makkah');
 assert.equal(catalogueTargetIdInQuestion('Tell me about New Yorkshire.'), null, 'Place matching uses word boundaries');
 assert.equal(suggestedPerspective('How do tectonic plates move above the mantle?'), 'cutaway');
 assert.equal(suggestedPerspective('Help me read the mountain relief.'), 'horizon');
@@ -40,6 +44,14 @@ assert.match(ny.context, /tidal harbour/);
 assert.doesNotMatch(ny.context, /supported|deterministic/);
 
 assert.deepEqual(planLiveNavigation('Take me to Singapore.').commands, [{ type: 'flyTo', targetId: 'singapore' }]);
+assert.deepEqual(planLiveNavigation('Fly to Palm Jumeirah.').commands, [{ type: 'flyTo', targetId: 'palm-jumeirah' }]);
+assert.deepEqual(planLiveNavigation('Take me to Mecca.').commands, [{ type: 'flyTo', targetId: 'makkah' }]);
+assert.deepEqual(planLiveNavigation('Show Masjid al-Haram from above.').commands, [
+  { type: 'flyTo', targetId: 'makkah' },
+  { type: 'setPerspective', perspective: 'aerial' },
+]);
+assert.match(planLiveNavigation('Visit Palm Jumeirah.').context, /crescent breakwater/);
+assert.match(planLiveNavigation('Go to Makkah.').context, /mountain valley/);
 assert.deepEqual(planLiveNavigation('Where is the deepest trench?').commands, [{ type: 'flyTo', targetId: 'challenger-deep' }]);
 assert.deepEqual(planLiveNavigation('Show me the satellites.').commands, [
   { type: 'setScale', tier: 'planet' },
@@ -56,6 +68,9 @@ assert.doesNotMatch(flights.context, /live tracking|real.time position|illustrat
 
 assert.equal(planLiveNavigation('What happened in New York in 2001?'), null);
 assert.equal(planLiveNavigation('Tell me about Singapore history.'), null);
+assert.equal(planLiveNavigation('Why was Palm Jumeirah built?'), null, 'Prepared targets still route factual questions to the backend');
+assert.equal(planLiveNavigation('Compare Makkah and Singapore.'), null, 'Prepared targets still route comparisons to the backend');
+assert.equal(planLiveNavigation('Track flights over Mecca.'), null, 'Prepared targets do not bypass tracking semantics');
 assert.equal(planLiveNavigation('How many flights are over Singapore right now?'), null);
 assert.equal(planLiveNavigation('Why is the deepest trench so deep?'), null);
 assert.equal(planLiveNavigation('Show satellites and explain their history.'), null);
@@ -116,4 +131,4 @@ assert.deepEqual(await executeLiveNavigation(ny, {
 }), { ok: false, reason: 'Navigation was cancelled.', commandsAccepted: 1 });
 assert.equal(afterCalls, 1, 'Abort after acceptance prevents the next command');
 
-console.log('PASS: bounded Live plans cover New York, Singapore, Challenger Deep, satellites, global illustrated flights, broad-query fallback, serialized acceptance, rejection, and abort boundaries. Fake sender only; renderer bridge is checked separately.');
+console.log('PASS: bounded Live plans cover New York, Singapore, Palm Jumeirah, Makkah aliases, Challenger Deep, satellites, global illustrated flights, broad-query and tracking fallback, serialized acceptance, rejection, and abort boundaries. Fake sender only; renderer bridge is checked separately.');

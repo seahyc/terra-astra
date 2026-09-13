@@ -1,5 +1,6 @@
 import { validateLibraryModel } from '../terra/model-library/library.mjs';
 import { validateProceduralModelRecipe, type ProceduralModelRecipe } from '../terra/sculptures/procedural-model';
+import { SPECIAL_TARGETS } from './special-destinations';
 /** Serializable boundary for YC's Live navigator. Rendering stays inside the engine. */
 export type ScaleTier = 'planet' | 'region' | 'city' | 'street';
 export type WorldLayer = 'satellites' | 'aircraft' | 'ships' | 'urban';
@@ -26,6 +27,7 @@ export type WorldTarget = Readonly<{ id: string; label: string; lat: number; lon
 export const WORLD_TARGETS: readonly WorldTarget[] = Object.freeze(([
   { id: 'singapore', label: 'Singapore', lat: 1.2965, lon: 103.851, tier: 'city', detail: 'Detailed central Singapore streets; procedural activity.' },
   { id: 'new-york', label: 'New York', lat: 40.721562, lon: -73.995718, tier: 'city', detail: 'Curated New York showcase; procedural activity.' },
+  ...SPECIAL_TARGETS,
   { id: 'challenger-deep', label: 'Challenger Deep', lat: 11.369, lon: 142.587, tier: 'region', detail: 'Mariana Trench; exaggerated NOAA relief.' },
 ] satisfies WorldTarget[]).map(target=>Object.freeze(target)));
 export function validateWorldCommand(input: unknown): WorldCommand | null {

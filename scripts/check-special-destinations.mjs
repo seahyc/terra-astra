@@ -7,7 +7,7 @@ import * as THREE from 'three';
 
 const root = new URL('../lib/', import.meta.url).href;
 registerHooks({ resolve(specifier, context, next) {
-  if (context.parentURL?.startsWith(root) && specifier.startsWith('.') && !specifier.endsWith('.ts')) return next(specifier + '.ts', context);
+  if (context.parentURL?.startsWith(root) && specifier.startsWith('.') && !(/\.(?:ts|mjs|js|json)$/.test(specifier))) return next(specifier + '.ts', context);
   return next(specifier, context);
 } });
 let clock = 0, frame = null, resizeCallback = null;

@@ -1,12 +1,3 @@
-/* Preserve the meaning of the motion after the introductory copy fades. */
-@media (max-width: 1100px) {
-  .flowDisclosure {
-    display: block;
-    position: absolute;
-    left: 0;
-    bottom: calc(100% + 65px);
-    color: #adbdc6;
-    line-height: 1.5;
-    white-space: nowrap;
-  }
-}
+/* Keep scene provenance visible after the opening or answer copy changes. */
+.flowDisclosure { position:absolute; top:90px; right:96px; z-index:3; margin:0; color:#adbdc6; font-size:12px; line-height:1.5; pointer-events:none; }
+@media (max-width:700px) { .flowDisclosure { top:72px; left:23px; right:23px; font-size:11px; } }
