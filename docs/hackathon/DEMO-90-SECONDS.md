@@ -1,23 +1,24 @@
-# Exactly 90 seconds — recording script
+# Exactly 90 seconds — revised target script
 
-Use the actual public release and capture real WebGL. This script is a production guide, not proof that a video has been recorded. Runtime Ask Astra is absent from v0.4.1; do not claim it.
+Planning only. Opening/reformation and the visitor's three-place constellation are proposed and absent from production v0.4.1. This is not recording/export evidence. Capture a verified local candidate only after it works; label its source honestly. Production stays frozen until separately authorized.
 
-| Time | Picture | Voice or caption |
-|---|---|---|
-| 00–10 | Full Earth, slow rotation | “We have always looked up to find the stars. Terra Astra turns our gaze home.” |
-| 10–22 | Pause, Horizon, Cutaway; show relief | “Real terrain and ocean-floor data shape a body of starlight. Its interior is an artistic interpretation.” |
-| 22–32 | Globe → Enter Singapore, uninterrupted descent | “A planet becomes a place.” |
-| 32–47 | Select Amina; reveal three places and story | “An imagined life, held by familiar places: Kampong Gelam, Little India, Marina Bay.” |
-| 47–60 | Close panel; Return to orbit; remembered light | “Return, and that life stays with you as one warm light.” |
-| 60–78 | Actual Astra prompt, reviewer diagnosis, source diff, and phone result | “We began today with our working v0.4 prototype. Astra reviewed the journey, found a phone-framing bug and a frozen-scene recovery gap, and helped us fix and verify them in WebGL.” |
-| 78–90 | Settled Earth, closing words; project name | “The constellation was us all along.” |
+| Time | Picture | Voice/caption direction |
+| --- | --- | --- |
+| 00–10 | Recognisable Earth, slow rotation | Terra Astra. Earth, constellated. |
+| 10–25 | Rotate then pause on spatial terrain/oceans | Geography becomes light; terrain and ocean floors retain their shape with shimmer paused. |
+| 25–40 | Terra opens into a coherent extended Astra formation | Earth reveals its depth. |
+| 40–60 | Choose three places; reveal connected warm lights | Where I began. Where I belong. A place I carry. |
+| 60–72 | Reform Earth around those lights; settle | The constellation was us all along. |
+| 72–87 | Actual Astra instruction, diagnosis/change and verified result | Disclose pre-existing v0.4; describe only completed and evidenced engineering work. |
+| 87–90 | Project name on settled Earth | Terra Astra — Earth, constellated. |
 
-## Capture discipline
+Use the retained Singapore route as fallback if the new route is unreliable at freeze. Never present an unbuilt feature as footage or claim a local candidate is deployed.
 
-- Open https://terra-astra.riffster.chatgpt.site, confirm v0.4.1 and native WebGL.
-- Restart journey before each take. Use visible UI actions. Disable unrelated notifications through existing user settings only; do not capture messages, tokens, profile details or other tasks.
-- Use desktop landscape output; keep the entire app in frame. Record clean source footage longer than each slot, then trim.
-- For engineering evidence use the exact sanitized instruction and changes in ASTRA-EVIDENCE.md and Git diff v0.4…v0.4.1. Do not fabricate a runtime request or response.
-- If the teammate later delivers verified live inference, substitute its actual request/actions for part of the middle segment and adjust captions. Keep the baseline disclosure.
-- Final export: H.264 MP4, 30 fps, exactly 2,700 frames = 90.000 seconds. Match audio to 90.000 seconds. Verify actual container/stream duration with ffprobe or equivalent before upload.
-- Open the uploaded URL without owner credentials; duration, access and successful portal submission need explicit evidence.
+## Capture and delivery
+
+- Confirm native WebGL and record exact source/release. Restart before each take; preserve the full app frame and exclude unrelated personal information/credentials.
+- Capture a rough take once the full route works. Show actual Astra engineering evidence from ASTRA-EVIDENCE.md and source history; no fabricated prompts/responses or runtime inference claim.
+- Existing verified evidence: responsive globe/story framing and restart/fatal recovery UI fixes. Induced native graphics-context loss and physical-phone performance remain unverified.
+- Export H.264 MP4, 30 fps, exactly 2,700 frames = 90.000 seconds; align audio. Verify container/stream duration with ffprobe or equivalent.
+- Verify uploaded playback and judge-equivalent access. A script is not an export; an export is not an upload; an upload is not submission confirmation.
+- Freeze 14:00 SGT; assets 15:00; submit before 15:20; deadline 15:30. Preserve recording/upload buffer.

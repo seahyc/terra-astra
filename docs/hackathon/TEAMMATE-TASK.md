@@ -1,47 +1,64 @@
-# Teammate task — seahyc
+# YC task — personal constellation, contract v2
 
-Status: proposed scope, awaiting team agreement. Do not start runtime implementation until the owner confirms this contract. GitHub write access for seahyc verified at 11:17 SGT. The hackathon portal team join is separate and remains unverified.
+Proposed implementation prompt for YC (`seahyc`). Planning only until both sessions acknowledge this contract in Git. Replaces Ask Astra; preserve the unused `feat/ask-astra` branch. Production must stay unchanged.
 
-Repository: https://github.com/shariffster/terra-astra (private during setup).
-Base: `v0.4.1` at `c4a4dad2281203eedc50138d4dac2a1c4048309c`.
-Work branch: `feat/ask-astra`, reserved on GitHub from that base. Check it out in your own clone. Keep all historical tags. No force pushes.
+Repository: https://github.com/shariffster/terra-astra (private; YC write access verified).
+Base: agreed HEAD of `sprint/hackathon-integration`, retaining v0.4.1 at `c4a4dad2281203eedc50138d4dac2a1c4048309c`. Record exact base SHA in PR. Proposed branch: `feat/personal-constellation`; create in your own clone after fetching the agreed base. No force pushes or moved tags.
+
+## Exact scope and ownership
+
+Build a compact accessible form to choose exactly three meaningful places from a searchable local catalogue. Each choice has a short meaning. No runtime API, geocoding, persistence or new dependencies.
 
 You own only these new files:
-- `app/ask-astra.tsx` and `app/ask-astra.module.css`
-- `app/api/ask-astra/route.ts`
-- `lib/astra/planner.ts`, `lib/astra/planner.test.ts`
-- `docs/hackathon/TEAMMATE-EVIDENCE.md`, `docs/hackathon/SUBMISSION-DRAFT.md`
+- `app/personal-constellation-form.tsx`
+- `app/personal-constellation-form.module.css`
+- `lib/personal/catalogue.ts` (include coordinate sources/provenance)
+- `lib/personal/model.ts` (validation and draft helpers)
+- `scripts/check-personal-model.mjs`
+- `docs/hackathon/TEAMMATE-EVIDENCE.md`
+- `docs/hackathon/SUBMISSION-DRAFT.md`
 
-Lead owns `lib/terra/**`, `app/terra-experience.tsx`, `app/globals.css`, all shared types, dependency manifests/lockfiles, hosting, integration, releases and tags. Do not edit those files or deploy. Request an interface change through your PR if necessary. Do not control unrelated Codex tasks. Return work through GitHub.
+Lead owns `lib/terra/**`, shared UI/styles/types, existing checks, dependencies, hosting, integration and releases. Do not edit these, drive the engine or deploy. Request interface changes through your PR. Coordinate independent sessions through Git.
 
-## Proposed contract v1
+## Proposed shared contract
 
-The lead will supply `lib/terra/astra-contract.ts` after team agreement. Until then use this document to assess feasibility; do not invent a competing shared type.
+Lead will create `lib/terra/personal-contract.ts` after agreement. Do not create a competing copy. Proposed exports:
 
-Request: `POST /api/ask-astra`, JSON `{prompt: string, stage: 'orbit'|'city'}`. Trim prompt, require 1–400 characters, reject unknown keys and oversized bodies. Never send location, profiles or conversation history.
+```ts
+export type PersonalPlace = Readonly<{
+  id: string;
+  label: string;
+  lat: number;
+  lon: number;
+  meaning: string;
+}>;
+export type PersonalPlaces = readonly [PersonalPlace, PersonalPlace, PersonalPlace];
+export type TransformationState = Readonly<{
+  phase: 'terra' | 'opening' | 'astra' | 'reforming';
+  progress: number; // bounded 0..1; 0 = Terra, 1 = Astra
+  busy: boolean;
+}>;
+export type PersonalConstellationFormProps = {
+  initialValue?: PersonalPlaces;
+  disabled: boolean;
+  onSubmit: (places: PersonalPlaces) => void;
+  onReset: () => void; // draft only, not camera or submitted-personal memory
+};
+```
 
-A plan contains 1–5 actions from this closed set:
-- `{type:'view', view:'globe'|'oblique'|'cutaway', region:'indonesia'|'andes'}`
-- `{type:'singapore'}`
-- `{type:'life', id:'amina'|'daniel'|'mei'}`
-- `{type:'return'}`
+Named export: `PersonalConstellationForm`. Lead owns placement/transformation state, passes disabled during conflicting work, and revalidates submissions. Submission is a data event, not a camera-arrival promise. Existing Engine.descend() resolves at loading/flight dispatch, not arrival.
 
-No arbitrary camera coordinates, URLs, code, tool names, configuration or external searches. The whole plan must be legal starting from the supplied stage; reject invalid transitions. View is orbit-only, life/return are city-only. Singapore transitions orbit→city; return transitions city→orbit.
+Validation: exactly three distinct catalogue IDs; labels/coordinates must match trusted catalogue entries; finite latitude [-90,90] and longitude [-180,180]; trimmed nonempty meaning of at most 80 characters. Normalize through catalogue lookup; never invent coordinates from arbitrary text. Defaults: “Where I began”, “Where I belong”, “A place I carry”. Catalogue limits must be visible. Render meanings as plain text; no analytics or network submission.
 
-Success: `{mode:'live', model:'gpt-6-astra', summary:string, actions:Action[]}`. Summary <=160 characters. Only a completed, validated API response may use mode live. Reject malformed/unsupported results; do not silently substitute another model.
+Form reset clears draft selections/meanings and calls onReset; it does not clear the submitted constellation. Resubmission replaces the triple atomically. Lead owns explicit personal clear, camera replay and full restart. Personal state stays separate from the fixed fictional Singapore stories.
 
-Failure: non-2xx `{error:{code:'unavailable'|'invalid_request'|'rate_limited', message:string}}`, with safe user copy and no credential/provider response leakage. Use a short timeout, server-side key, bounded output, and rate/cost safeguards appropriate to a public demo. Do not log the secret or full provider payload.
+## Acceptance and handback
 
-Component export: `AskAstra({stage, disabled, onPlan})`, where stage is orbit/city, disabled blocks new submission, and `onPlan(plan)` returns Promise<void>. UI owns text submission/loading/error and displays the live/curated label. Lead owns executing the plan via existing UI wrappers, waiting for actual stage callbacks, cancellation/reset, and layout placement. IMPORTANT: awaiting Engine.descend() waits for loading/flight dispatch, not arrival. Never drive the Engine directly.
-
-Curated fallback must be a separate explicit button labelled `Play a curated journey`; use a fixed known route and mode `curated`, model null. Never call a scripted sequence live Astra or auto-convert an API failure into an unlabeled success. Avoid a conversational chat surface; one compact request and a readable action summary is enough.
-
-## Acceptance and cutoff
-
-- Verify `gpt-6-astra` with the actual provisioned account and one successful response; official catalog presence alone is not account access.
-- Server key never enters source control, client bundle, response body or logs. Do not paste secrets in task messages.
-- Demonstrate one real prompt, validated action sequence, timeout/error, invalid input and explicit curated fallback. Include exact sanitized evidence in your evidence document.
-- Check TypeScript and focused validation tests. No new dependencies without lead agreement.
-- Open a PR into `sprint/hackathon-integration`; no shared-file edits. Include exact commit and files.
-- Integration target 12:15 SGT; if live access remains unavailable, return the component/route feasibility result and prioritize submission preparation. Feature freeze 14:00; assets done 15:00; submit by 15:20 for 15:30 deadline.
-- Submission disclosure: working v0.4 existed before today. Distinguish Astra engineering assistance from runtime inference. The portal requires your team join before saving a project.
+- Keyboard-operable labelled search/selection; three distinct choices; readable errors; clear limited-catalogue explanation.
+- Reject missing/duplicate places, forged IDs/coordinates, nonfinite values and overlong/blank meanings. Focused validation checks cover these cases.
+- One valid triple arrives through onSubmit. Disabled blocks edits/submission/reset. No shared-file, credential, API or dependency changes.
+- No claim of detailed streets outside Singapore. All coordinate sources documented.
+- Run TypeScript and focused model check. Evidence includes exact commands/results, source provenance, base/commit SHA and integration example.
+- PR target `sprint/hackathon-integration`. Target handback 12:20 SGT, combined route 13:05, freeze 14:00. Report blockers through Git/your human teammate.
+- Submission draft uses verified capabilities only; disclose pre-existing v0.4 and distinguish today's fixes/new work. Astra currently assists engineering; runtime inference is absent unless separately built and verified.
+- Portal team join remains a human action; GitHub access is not portal membership. Judge repository/video access and exact 90-second submission video remain outstanding.

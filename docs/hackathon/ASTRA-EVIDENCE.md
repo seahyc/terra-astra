@@ -43,3 +43,7 @@ Native deployment succeeded for v0.4.1 on 13 September at 11:14:45 SGT. Unauthen
 ## Runtime model reference
 
 Official model identifier `gpt-6-astra` verified at https://developers.openai.com/api/docs/models/gpt-6-astra on 13 September 2026. Credential provisioning and account-level model access remain unverified.
+
+## Scope revision — planning only
+
+At approximately 11:21 SGT, read revised HANDOFF.md, CURRENT_STATE.md and HACKATHON_PLAN.md. Replaced Ask Astra-led planning with a proposed reversible Terra ↔ Astra transformation and separate personal three-place constellation. Preserved completed v0.4.1 work. This revision changes documentation only; production is explicitly frozen. No new feature implementation is claimed.

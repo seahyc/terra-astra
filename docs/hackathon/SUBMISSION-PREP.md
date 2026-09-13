@@ -19,3 +19,5 @@ Human requirements:
 - Confirm the rules permit the disclosed pre-existing baseline.
 - Complete final submission before 15:20 SGT, with deadline 15:30.
 - Verify app, repository and video links using judge-equivalent access and retain submission confirmation.
+
+Scope v2 note: the description above still describes the verified production release. The proposed Terra ↔ Astra transformation and visitor-created constellation are not shipped. Update submission claims only after implementation and verification; production is frozen by the latest user instruction.
