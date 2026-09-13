@@ -1,13 +1,11 @@
 #!/usr/bin/env node
 
 import { writeFile } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
 
 const API_BASE = "https://api.openai.com/v1";
 const AGENTS_BETA = "agents=v1";
 const TIMEOUT_MS = 120_000;
 const CLEANUP_TIMEOUT_MS = 10_000;
-const REPORT_PATH = import.meta.url.startsWith("file:") ? fileURLToPath(new URL("./probe-report.json", import.meta.url)) : null;
 
 export const SEA_DATASET_INVENTORY = Object.freeze({
   scope: "Terra Astra checked-in global, Singapore and New York source inventory",
@@ -179,7 +177,7 @@ export async function runProbe({
   onEvent = () => {},
   signal: externalSignal,
   fetchImpl = fetch,
-  reportPath = REPORT_PATH,
+  reportPath = null,
 } = {}) {
   if (!apiKey) throw new Error("OPENAI_API_KEY is required; no API request was made.");
   const timeoutSignal = AbortSignal.timeout(TIMEOUT_MS);
@@ -359,15 +357,4 @@ ${question}${inventoryMode === "inline" ? "\n\nServer-measured inventory:\n" + J
     delete report.text_by_turn;
     if (reportPath) await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`, { mode: 0o600 });
   }
-}
-
-if (import.meta.url.startsWith("file:") && process.argv[1] === fileURLToPath(import.meta.url)) {
-  runProbe({ apiKey: process.env.OPENAI_API_KEY, inventoryMode: process.env.PROBE_INVENTORY_MODE === "inline" ? "inline" : "function", onEvent: event => { if (event.type.includes("subagent.created") || event.type.includes("requires_action")) console.log(JSON.stringify(event)); }, keepSession: process.env.KEEP_SESSION === "1" })
-    .then(report => {
-      console.log(JSON.stringify({ ok: true, report_path: REPORT_PATH, session_id: report.session_id, cleanup: report.cleanup, subagents: report.subagent_ids.length, tool_calls: report.tool_calls_handled.length, usage: report.usage }, null, 2));
-    })
-    .catch(error => {
-      console.error(JSON.stringify({ ok: false, error: redact(error.message, [process.env.OPENAI_API_KEY]), report_path: REPORT_PATH }, null, 2));
-      process.exitCode = 1;
-    });
 }

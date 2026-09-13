@@ -1,13 +1,18 @@
 /** User-facing release history. Keep historical entries tied to their saved milestones. */
-export const currentVersion = '0.7.0';
+export const currentVersion = '0.7.1';
 
 export const releases = [
+  {
+    version: '0.7.1', date: '2026-09-13', dateLabel: '13 September 2026', title: 'Hosted answers', milestone: 'This build',
+    changes: ['Repairs a hosted backend startup error by separating local diagnostic files from the online answer service.'],
+    review: 'The production-only error was traced from Worker logs to a local file URL in the research module. The fix preserves the answer routes and original globe.',
+  },
   {
     version: '0.7.0',
     date: '2026-09-13',
     dateLabel: '13 September 2026',
     title: 'Ask the Earth',
-    milestone: 'This build',
+    milestone: 'Previous release',
     changes: [
       'Typed and spoken questions share the original Earth. Geographic answers can travel beyond the three examples, with aerial, horizon and cutaway perspectives.',
       'Everyday questions get a fast answer; harder questions use stronger reasoning or source searches. In-depth research still brings together independent agents. Generated images add context when an illustration helps.',
