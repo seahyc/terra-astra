@@ -1,13 +1,26 @@
 /** User-facing release history. Keep historical entries tied to their saved milestones. */
-export const currentVersion = '0.7.1';
+export const currentVersion = '0.8';
 
 export const releases = [
+  {
+    version: '0.8',
+    date: '2026-09-13',
+    dateLabel: '13 September 2026',
+    title: 'Different places, different motion',
+    milestone: 'This build',
+    changes: [
+      'Palm Jumeirah adds its mapped trunk, fronds and crescent, surrounding Dubai coast, and warm activity along curated local roads.',
+      'Makkah adds Masjid al-Haram context and a source-derived Kaaba anchor. Soft collective movement circulates counter-clockwise, with a persistent interpretive-flow disclosure.',
+      'Both destinations use the existing world-command interface, renderer and fast scale navigation. Genesis, Singapore, New York and Challenger Deep remain connected.',
+    ],
+    review: 'These destinations use bounded OpenStreetMap snapshots. Activity is procedural and illustrative, never live tracking, crowd counts or route guidance. Makkah is an abstract celestial study, not a photorealistic or architectural survey. Physical-phone performance remains unverified. The v0.7.1 source and saved publication remain available as the fallback.',
+  },
   {
     version: '0.7.1',
     date: '2026-09-13',
     dateLabel: '13 September 2026',
     title: 'Stay with the place you chose',
-    milestone: 'This build',
+    milestone: 'Previous release',
     changes: [
       'The primary journey button follows the selected destination: regional New York returns to New York city detail, and Challenger Deep returns to the planet.',
       'These actions use the existing world-command path and fast scale transitions. Singapore remains the opening destination.',
