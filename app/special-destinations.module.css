@@ -1,0 +1,12 @@
+/* Preserve the meaning of the motion after the introductory copy fades. */
+@media (max-width: 1100px) {
+  .flowDisclosure {
+    display: block;
+    position: absolute;
+    left: 0;
+    bottom: calc(100% + 65px);
+    color: #adbdc6;
+    line-height: 1.5;
+    white-space: nowrap;
+  }
+}
