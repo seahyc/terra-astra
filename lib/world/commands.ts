@@ -12,11 +12,11 @@ export type GenesisState = Readonly<{ phase: GenesisPhase; progress: number; bus
 export type WorldState = Readonly<{ targetId: string | null; tier: ScaleTier; busy: boolean; genesis: GenesisState; layers: Readonly<Record<WorldLayer, boolean>> }>;
 export type WorldCommandResult = Readonly<{ ok: boolean; command: WorldCommand; reason?: string }>;
 export type WorldTarget = Readonly<{ id: string; label: string; lat: number; lon: number; tier: ScaleTier; detail: string }>;
-export const WORLD_TARGETS: readonly WorldTarget[] = Object.freeze([
+export const WORLD_TARGETS: readonly WorldTarget[] = Object.freeze(([
   { id: 'singapore', label: 'Singapore', lat: 1.2965, lon: 103.851, tier: 'city', detail: 'Detailed central Singapore streets; procedural activity.' },
   { id: 'new-york', label: 'New York', lat: 40.721562, lon: -73.995718, tier: 'city', detail: 'Curated New York showcase; procedural activity.' },
   { id: 'challenger-deep', label: 'Challenger Deep', lat: 11.369, lon: 142.587, tier: 'region', detail: 'Mariana Trench; exaggerated NOAA relief.' },
-].map(Object.freeze));
+] satisfies WorldTarget[]).map(target=>Object.freeze(target)));
 export function validateWorldCommand(input: unknown): WorldCommand | null {
   if (!input || typeof input !== 'object' || Array.isArray(input)) return null;
   const c=input as Record<string,unknown>;
