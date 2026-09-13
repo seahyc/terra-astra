@@ -142,3 +142,8 @@ For rollback, select the known saved Sites version and redeploy it when authoriz
 - Reuses six prepared/approved models, including the generated turbine, and saves new validated recipes to shared D1 with hashed exact lookup and bounded semantic candidates.
 - Starts Live independently of model work; exposes recipe generation through a native Agents function with a 15-second recipe deadline, cancellation and Worker cleanup.
 - Renders named, animated parts through the existing globe shader and geographic WorldCommand engine. Keeps measured Java values separate from generated geometry.
+
+## v0.8.1 — 2026-09-13 — A stage for every question
+- Carries the responsive interface, reusable model library, voice and diagnostics into the public demo.
+- Corrects framing for generated models with no geographic anchor, which could extend outside the view in the v0.8.0 candidate.
+- v0.8.0 was committed and tagged but held before Sites version saving or deployment when the final browser check exposed this issue. Its tag remains unchanged.

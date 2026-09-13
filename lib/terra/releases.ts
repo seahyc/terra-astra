@@ -1,9 +1,17 @@
 /** User-facing release history. Keep historical entries tied to their saved milestones. */
-export const currentVersion = '0.8.0';
+export const currentVersion = '0.8.1';
 
 export const releases = [
   {
-    version: '0.8.0', date: '2026-09-13', dateLabel: '13 September 2026', title: 'An explanation beside the Earth', milestone: 'This build',
+    version: '0.8.1', date: '2026-09-13', dateLabel: '13 September 2026', title: 'A stage for every question', milestone: 'This build',
+    changes: [
+      'Includes the responsive explanation panel, compact You/Astra transcript, reusable model library, live voice and local diagnostics prepared for v0.8.0.',
+      'Generated models without a geographic location receive a fitted presentation view inside the globe scene.',
+    ],
+    review: 'The v0.8.0 candidate was held before deployment after a browser check found a generated lighthouse outside the visible frame. This repair retains the same public-site authentication and shared model storage. Physical-phone and microphone audio verification remain separate.',
+  },
+  {
+    version: '0.8.0', date: '2026-09-13', dateLabel: '13 September 2026', title: 'An explanation beside the Earth', milestone: 'Preview candidate',
     changes: [
       'Prepared models and the approved wind turbine share a reusable library. New validated models are saved in shared D1 storage and retrieved cheaply for repeat questions.',
       'Live starts explaining while native Agents coordinates the bounded model recipe; named model parts use the original globe shader and camera.',
