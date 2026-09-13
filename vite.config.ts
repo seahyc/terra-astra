@@ -52,6 +52,10 @@ export default defineConfig(async () => {
 
   return {
     server: {
+      ...(process.env.TERRA_LOCAL_BRIDGE === '1' ? { proxy: {
+        '/api/explore': { target: 'http://127.0.0.1:5182', changeOrigin: false },
+        '/api/terra': { target: 'http://127.0.0.1:5182', changeOrigin: false },
+      } } : {}),
       ...(managedLinux ? { host: "0.0.0.0", allowedHosts: ["terminal.local"] } : {}),
       ...(isCodexSeatbeltSandbox ? { watch: { useFsEvents: false, usePolling: true } } : {}),
     },

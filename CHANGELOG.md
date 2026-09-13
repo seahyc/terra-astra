@@ -2,6 +2,13 @@
 
 Semantic versions label the experience; Sites version numbers identify saved deployment packages. They are separate counters. `lib/terra/releases.ts` is the source for the public history page and current build badge. Git tags identify exact source snapshots; native Sites records are authoritative for save/deploy status.
 
+## v0.10.0-alpha.1 — 2026-09-13 — Open exploration preview
+- Personal-fork preview: public globe, prepared models and data feeds; inference requires a visitor-owned Codex connection through official device authorization.
+- General grounded search and safe procedural recipes replace demo evidence routing. Follow-up context is carried explicitly. No paid API-key fallback, live voice or image-generation calls.
+- A separate Node bridge isolates visitor credential contexts and bounds concurrent jobs, duration, retrieval and output size. Sites serves the renderer and proxies to a configured HTTPS bridge.
+- Tests cover source/geometry validation, anonymous browsing, per-visitor accounts, logout, overlap and cancellation. Local desktop/phone connection UI and the real device-code initiation were checked. Full visitor authorization awaits user completion; no public bridge or replacement deployment has been provisioned.
+- See docs/OPEN-EXPLORATION.md and docs/evals/OPEN-SEARCH.md. This is a source preview, not a saved or deployed Sites release.
+
 ## v0.9 — 2026-09-13 — Ready for the journey
 - Stop ends microphone tracks immediately; the data channel remains briefly available for final usage. A new regression verifies no false ended-track error and successful late usage delivery.
 - Disconnected sessions return to a usable Talk button; the visible status omits raw usage JSON.
