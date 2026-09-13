@@ -1,9 +1,17 @@
 /** User-facing release history. Keep historical entries tied to their saved milestones. */
-export const currentVersion = '0.8.2';
+export const currentVersion = '0.8.3';
 
 export const releases = [
   {
-    version: '0.8.2', date: '2026-09-13', dateLabel: '13 September 2026', title: 'Ready to ask', milestone: 'This build',
+    version: '0.8.3', date: '2026-09-13', dateLabel: '13 September 2026', title: 'Keep the conversation going', milestone: 'This build',
+    changes: [
+      'When a browser blocks voice playback, Enable audio resumes sound from a direct tap while keeping the current voice connection and transcript.',
+      'Voice playback is prepared during the microphone-button gesture, and Stop clears any pending playback recovery.',
+    ],
+    review: 'Regression checks cover blocked playback, direct-tap recovery, transient failures and stale callbacks. An isolated browser test exercised recovery with an HTMLAudioElement and synthetic MediaStream; physical microphone and public-site audio audition remain separate.',
+  },
+  {
+    version: '0.8.2', date: '2026-09-13', dateLabel: '13 September 2026', title: 'Ready to ask', milestone: 'Public demo',
     changes: [
       'A clear Sign in with ChatGPT button gives visitors an obvious way to start.',
       'The answer panel drops the model-library picker; Astra still selects and reuses models automatically, with named-part controls available in the explanation.',
