@@ -1,97 +1,142 @@
 'use client';
-
 import { useCallback, useEffect, useRef, useState } from 'react';
-import QuestionBar from '../terra-input/QuestionBar';
-import { createLiveController, type TranscriptRow } from './live-controller';
-import { readAnswerStream } from './answer-stream';
-import { executeLiveNavigation, planLiveNavigation } from './world-navigator';
+import { Mic, Square, LoaderCircle } from 'lucide-react';
+import { z } from 'zod';
+import type { EvidenceTools } from '../../lib/terra/evidence/handlers';
+import { planQuestion } from '../../lib/terra/answer-plan';
+import { createLiveController } from './live-controller';
 import styles from './globe-voice.module.css';
+import QuestionBar from '../terra-input/QuestionBar';
+import { readAnswerStream } from './answer-stream';
+import { EvidencePanel } from '../terra-evidence/EvidencePanel';
+import type { PresentationSnapshot } from '../../lib/terra/evidence/types';
+import { worldAnswerSchema, immediateTarget, type WorldAnswer, type WorldTarget } from '../../lib/terra/world-answer';
 
-type Props = { ready: boolean; onAskReady?: (ask: ((question: string) => void) | null) => void };
-type LiveController = ReturnType<typeof createLiveController>;
-
-/** The Live transport delegates full questions to the same bounded visual/answer path as typing. */
-export default function GlobeVoice({ ready, onAskReady }: Props) {
-  const [open, setOpen] = useState(false);
-  const [status, setStatus] = useState('off');
-  const [rows, setRows] = useState<TranscriptRow[]>([]);
+type Props = { snapshot: PresentationSnapshot; tools: EvidenceTools; ready: boolean; onAskReady: (ask: ((question: string) => void) | null) => void };
+export default function GlobeVoice({ tools, ready, onAskReady, snapshot }: Props) {
+  const [voiceStatus, setVoiceStatus] = useState('off');
+  const [progress, setProgress] = useState('');
   const [answer, setAnswer] = useState('');
+  const [opening, setOpening] = useState('');
+  const [spokenCaption,setSpokenCaption] = useState('');
+  const [questionText, setQuestionText] = useState('');
+  const [world, setWorld] = useState<WorldAnswer | null>(null);
+  const [activePlace, setActivePlace] = useState('');
+  const worldTargets = useRef<WorldTarget[]>([]), focusedTarget = useRef('');
   const [error, setError] = useState('');
+  const [rows, setRows] = useState<{who:'user'|'assistant';text:string}[]>([]);
   const [busy, setBusy] = useState(false);
-  const live = useRef<LiveController | null>(null);
-  const active = useRef<AbortController | null>(null);
-  const askRef = useRef<(question: string, delegationId?: string) => Promise<void>>(async () => {});
-
+  const live = useRef<ReturnType<typeof createLiveController> | null>(null);
+  const active = useRef<AbortController | null>(null), revision = useRef(0);
+  const askRef = useRef<(question: string, delegationId?: string) => void>(() => {});
+  const focusTarget = useCallback((target: WorldTarget) => {
+    if (focusedTarget.current === target.name) return;
+    focusedTarget.current = target.name;
+    setActivePlace(target.name);
+    void tools.director.presentContext(target).then(result => { if (result.status === 'unavailable') setError('That place could not come into view. Try another location.'); });
+  }, [tools]);
+  const emphasize = useCallback((text: string) => {
+    const phrases=text.match(/[^.!?]+[.!?]+(?:\s|$)|[^.!?]+$/g)??[text];
+    setSpokenCaption(phrases.at(-1)?.trim()??text);
+    const mentioned = worldTargets.current.map(target => ({target, at:text.toLowerCase().lastIndexOf(target.name.toLowerCase())})).filter(item => item.at >= Math.max(0,text.length - 100)).sort((a,b) => b.at-a.at)[0];
+    if (mentioned) focusTarget(mentioned.target);
+    const recent = text.slice(-100).toLowerCase();
+    const mention = [...recent.matchAll(/highest|mountain|above|lowest|deep|ocean floor|below|second link|causeway/g)].at(-1)?.[0] ?? '';
+    const target = /lowest|deep|ocean floor|below/.test(mention) ? 'Lowest sample' : /highest|mountain|above/.test(mention) ? 'Highest sample' : mention === 'second link' ? 'second-link' : mention === 'causeway' ? 'causeway' : '';
+    if (!target) return;
+    document.querySelectorAll<SVGElement>('[data-evidence-label-id]').forEach(node => {
+      const match = node.dataset.evidenceLabelId?.includes(target);
+      node.style.filter = match ? 'drop-shadow(0 0 7px #d6c8ff)' : '';
+      node.style.opacity = match ? '1' : '.6';
+    });
+  }, [focusTarget]);
   const ask = useCallback(async (question: string, delegationId?: string) => {
     if (!ready || !question.trim()) return;
+    const id = ++revision.current;
     active.current?.abort();
-    const request = new AbortController();
-    active.current = request;
-    setOpen(true); setBusy(true); setError(''); setAnswer('');
+    const controller = new AbortController(); active.current = controller;
+    setError(''); setAnswer(''); setOpening(''); setSpokenCaption(''); setBusy(true); setQuestionText(question); setWorld(null); setActivePlace(''); worldTargets.current = []; focusedTarget.current = '';
+    const selectedIds = tools.getSelection();
     try {
-      const plan = planLiveNavigation(question);
-      if (plan) {
-        setAnswer(plan.acknowledgement);
-        const result = await executeLiveNavigation(plan, {
-          signal: request.signal,
-          onDispatch: (_command, index) => { if (index === 0) live.current?.say(delegationId ?? null, plan.acknowledgement); },
-        });
-        if (request.signal.aborted) return;
-        if (!result.ok) throw new Error(result.reason ?? 'The world could not move there.');
-        setAnswer(plan.context);
-        live.current?.say(delegationId ?? null, plan.context);
-        return;
+      const plan = planQuestion(question, selectedIds);
+      const target = plan ? null : immediateTarget(question);
+      if (!plan) tools.clearSelection();
+      if (!plan && !target) tools.director.clear();
+      setProgress(plan || target ? 'Following your question…' : 'Finding the places behind your question…');
+      let rendering = plan ? tools.handlers.present({ evidenceIds: plan.evidenceIds, view: plan.view }) : target ? tools.director.presentContext(target) : null;
+      if (target) focusedTarget.current = target.name;
+      if (rendering) void rendering.then(() => { if (id === revision.current) setProgress('Exploring the details…'); });
+      live.current?.context(`User question: ${question}. Wait for the backend answer. Never claim visual features or values that have not been returned.`);
+      let response: Response | undefined;
+      for (let attempt = 0; attempt < 12; attempt++) {
+        controller.signal.throwIfAborted();
+        response = await fetch('/api/terra/answer', { method: 'POST', headers: {'Content-Type':'application/json','Accept':'application/x-ndjson'}, body: JSON.stringify({query:question, selectedIds, previous:world, previousQuestion:questionText}), signal:controller.signal });
+        if (response.status !== 409) break;
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
-      const response = await fetch('/api/terra/answer', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/x-ndjson' },
-        body: JSON.stringify({ query: question, selectedIds: [], previous: null }), signal: request.signal,
-      });
-      const data = await readAnswerStream(response, (text, complete) => {
-        if (request.signal.aborted) return;
-        setAnswer(text);
-        if (complete) live.current?.say(delegationId ?? null, text);
-      }) as { error?: string; measured?: { output?: string }; answer?: string };
-      if (request.signal.aborted) return;
-      if (!response.ok || data.error) throw new Error(data.error ?? 'The answer service is unavailable.');
-      const text = data.measured?.output ?? data.answer;
-      if (typeof text !== 'string' || !text.trim()) throw new Error('The answer service returned no answer.');
-      setAnswer(text);
-      live.current?.say(delegationId ?? null, text);
-    } catch (cause) {
-      if (!request.signal.aborted) setError(cause instanceof Error ? cause.message : 'The request could not complete.');
+      const result = z.object({error:z.string().optional(), world:worldAnswerSchema.nullable().optional(), measured:z.object({output:z.string()}).optional()}).parse(await readAnswerStream(response!, (text, complete) => {
+        if (id !== revision.current || controller.signal.aborted) return;
+        setOpening(text);
+        if(complete) live.current?.say(delegationId??null, `Start with this short opening now. The deeper answer is still being checked; do not add unverified details: ${text}`);
+      }));
+      if (!response!.ok) throw new Error(result.error || 'The explanation could not be completed.');
+      if (id !== revision.current || controller.signal.aborted) return;
+      if (!result.measured) throw new Error('The explanation was empty. Please try again.');
+      if (result.world) {
+        setWorld(result.world); worldTargets.current = result.world.targets;
+        const first = result.world.targets[0];
+        if (first) setActivePlace(first.name);
+        if (!first) { tools.director.clear(); rendering = null; }
+        if (first && (!target || first.name !== target.name)) {
+          focusedTarget.current = first.name;
+          rendering = tools.director.presentContext(first);
+        }
+      }
+      const scene = rendering ? await rendering : null;
+      if (id !== revision.current || controller.signal.aborted) return;
+      if (scene && (!('ready' in scene) || !scene.ready)) throw new Error('The globe could not settle on that view. Please try again.');
+      if (scene && tools.director.getSnapshot().scene?.revision !== scene.revision) return;
+      const explanation = result.measured.output.replace(/\*\*|^[-#]\s/gm,'');
+      setAnswer(explanation); setProgress('');
+      if (plan) emphasize(explanation);
+      live.current?.say(delegationId ?? null, `Continue with at most three short sentences; do not repeat the opening already spoken. ${scene ? "The geographic view is ready." : "No geographic view accompanies this answer."} ${result.world ? "This is background knowledge, not live or source-verified data. Approximate location anchors only; no historical routes or territories are shown." : "Use the measured evidence."} ${explanation}`);
+    } catch (e) {
+      if (id !== revision.current || controller.signal.aborted) return;
+      const message = e instanceof Error ? e.message : 'Something interrupted the explanation.';
+      setError(message); setProgress('');
+      live.current?.say(delegationId ?? null, `Tell the user briefly: ${message}`);
     } finally {
-      if (active.current === request) { active.current = null; setBusy(false); }
+      if (id === revision.current) { setBusy(false); active.current = null; }
     }
-  }, [ready]);
-  askRef.current = ask;
-
+  }, [tools, ready, emphasize, world, questionText]);
+  useEffect(() => { askRef.current = (q, id) => { void ask(q,id); }; onAskReady(q => { void ask(q); }); return () => onAskReady(null); }, [ask, onAskReady]);
   useEffect(() => {
-    live.current = createLiveController({
-      onStatus: setStatus, onTranscript: setRows, onError: setError,
-      onAssistantText: setAnswer,
-      onDelegation: ({ id, query }) => { void askRef.current(query, id); },
+    const controller = createLiveController({
+      onStatus:setVoiceStatus, onTranscript:setRows, onError:setError,
+      onAssistantText:emphasize,
+      onDelegation:({id,query}) => askRef.current(query,id),
     });
-    return () => { active.current?.abort(); live.current?.dispose(); live.current = null; };
-  }, []);
-  useEffect(() => {
-    onAskReady?.((question) => { void ask(question); });
-    return () => onAskReady?.(null);
-  }, [ask, onAskReady]);
+    live.current = controller;
+    return () => { revision.current++; active.current?.abort(); controller.dispose(); live.current = null; };
+  }, [emphasize]);
+  const isOn = ['checking availability','requesting microphone','connecting','awaiting session start','started','finalizing'].includes(voiceStatus);
+  const cancel = () => { revision.current++; active.current?.abort(); active.current = null; setBusy(false); setProgress(''); live.current?.stop(); };
+  return <section className={styles.dock} data-active={Boolean(questionText)} aria-label="Ask the interactive Earth">
+    {questionText && <p className={styles.question}>{questionText}</p>}
+    <div className={styles.caption} aria-live="polite">
+      {error ? <p role="alert" className={styles.error}>{error}</p> : (answer || opening) ? <p>{isOn && spokenCaption ? spokenCaption : (answer || opening).match(/^.*?[.!?](?:\s|$)/)?.[0] || (answer || opening)}</p> : isOn && rows.length ? <p>{rows.at(-1)?.text}</p> : progress ? <div className={styles.preload} aria-label="Preparing the explanation"><span/><span/><span/></div> : null}
 
-  const connected = !['off', 'stopped', 'error', 'startup timed out', 'disconnected'].includes(status) && !status.startsWith('closed') && !status.startsWith('disconnected');
-  const statusLabel = status.startsWith('closed') || ['off', 'stopped'].includes(status) ? 'Voice off' : status === 'started' ? 'Listening' : status;
-  return <aside className={styles.dock} aria-label="Astra navigation">
-    <div className={styles.heading}>
-      <button type="button" aria-expanded={open} onClick={() => setOpen(!open)}>Ask Astra <span>{open ? '−' : '+'}</span></button>
-      <button type="button" disabled={!ready} onClick={() => { setOpen(true); setError(''); if (connected) live.current?.stop(); else void live.current?.start(); }} aria-label={connected ? 'Stop Live voice' : 'Start Live voice'}>{connected ? 'Stop voice' : 'Talk'}</button>
     </div>
-    {open && <div className={styles.body}>
-      <p className={styles.status}>Live · {statusLabel}</p>
-      <QuestionBar onQuestion={(text) => ask(text)} disabled={!ready} busy={busy} onCancel={() => { active.current?.abort(); active.current = null; setBusy(false); }} />
-      {answer && <p className={styles.answer} aria-live="polite">{answer}</p>}
-      {error && <p className={styles.error} role="alert">{error}{/sign.?in|signed in/i.test(error) && <> <a href="/signin-with-chatgpt?return_to=%2F">Sign in with ChatGPT</a></>}</p>}
-      {rows.length > 0 && <details className={styles.transcript}><summary>Conversation</summary>{rows.slice(-6).map((row, index) => <p key={index}><strong>{row.who === 'user' ? 'You' : 'Astra'}:</strong> {row.text}</p>)}</details>}
-      {!answer && <p className={styles.hint}>Try “Show me the vibe in New York.”</p>}
-    </div>}
-  </aside>;
+    {busy && <p className={styles.statusLine}><LoaderCircle size={10} className={styles.spin}/>{opening ? 'Opening context · checking the details' : progress}</p>}
+    {snapshot.scene?.sculpture && <p className={styles.contextNote}>Illustrative starlight model · not a surveyed reconstruction</p>}
+    {world && <p className={styles.contextNote}>Background knowledge · approximate places</p>}
+    {world && <div className={styles.places}>{world.targets.map(target => <button key={target.name} aria-pressed={activePlace === target.name} onClick={() => focusTarget(target)}>{target.name}<span aria-hidden="true"> ↗</span></button>)}</div>}
+    {answer && <details className={styles.explanation}><summary>{world ? 'Background & context' : 'Full explanation'}</summary><div><p>{answer}</p>{world && <p className={styles.limitation}>{world.limitation || 'Background knowledge; not checked against current sources.'} Map labels are approximate orientation points.</p>}</div></details>}
+    {snapshot.scene?.measurement && <EvidencePanel snapshot={snapshot}/>}
+    <div className={styles.inputRow}>
+      <QuestionBar onQuestion={ask} disabled={!ready} busy={busy} onCancel={cancel}/>
+      <button className={`${styles.voiceButton} ${isOn ? styles.active : ''}`} type="button" disabled={!ready} onClick={() => isOn ? cancel() : void live.current?.start()} aria-label={isOn ? 'Stop voice' : 'Talk to Earth'} title={isOn ? 'Stop voice' : 'Talk to Earth'}>{isOn ? <Square size={17}/> : <Mic size={20}/>}</button>
+    </div>
+    {isOn && <p className={styles.live}>Listening · interrupt anytime</p>}
+  </section>;
 }

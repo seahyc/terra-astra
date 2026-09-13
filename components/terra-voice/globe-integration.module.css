@@ -1,0 +1,9 @@
+:global(.answering-mode .journey-bar){pointer-events:none;bottom:45px;right:auto}
+:global(.answering-mode .journey-bar .journey-button),:global(.answering-mode .journey-index),:global(.answering-mode .gesture-hint),:global(.answering-mode .destination-star),:global(.answering-mode .human-star),:global(.answering-mode .story-access){display:none!important}
+:global(.answering-mode .credits){font-size:8px;bottom:10px}
+:global(.answering-mode .depth-study){left:auto;right:94px;bottom:170px}
+:global(.answering-mode.has-evidence .opening),:global(.answering-mode:has([data-active=true]) .opening){opacity:0;pointer-events:none}
+:global(.answering-mode .opening h1){font-size:clamp(32px,4vw,52px)}
+:global(.answering-mode .opening){pointer-events:none}
+@media(max-width:1050px){:global(.answering-mode .journey-bar){display:none}}
+@media(max-width:700px){:global(.answering-mode .opening){top:125px}:global(.answering-mode .opening h1){font-size:34px}:global(.answering-mode .depth-study){right:70px;left:auto;bottom:170px;width:220px}:global(.answering-mode .view-tools){right:15px;top:32%}:global(.answering-mode .credits){display:none}}

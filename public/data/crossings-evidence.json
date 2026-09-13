@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "retrievedAt": "2026-09-13T04:07:19Z",
+  "features": [
+    {
+      "id": "crossing:causeway",
+      "kind": "crossing",
+      "label": "Johor-Singapore Causeway",
+      "aliases": [
+        "Johor Causeway",
+        "Singapore-Johor Bahru Causeway"
+      ],
+      "area": "Johor Bahru, Johor–Woodlands, Singapore",
+      "publishedLength": {
+        "value": 1056,
+        "unit": "m",
+        "definition": "Length of the Causeway structure from bank to bank, as published by the National Library Board; the National Heritage Board independently describes the completed causeway as 1,056 metres long."
+      },
+      "geometry": {
+        "kind": "schematic",
+        "coordinates": [
+          [
+            103.7687,
+            1.4512
+          ],
+          [
+            103.7642,
+            1.4624
+          ]
+        ],
+        "endpointLabels": [
+          "Woodlands, Singapore",
+          "Johor Bahru, Johor"
+        ],
+        "note": "Approximate display line only. Coordinates were not supplied by the cited length sources and have not been surveyed or independently verified."
+      },
+      "sources": [
+        {
+          "title": "The Johor-Singapore Causeway",
+          "url": "https://www.roots.gov.sg/Collection-Landing/listing/1188433",
+          "publisher": "National Heritage Board, Singapore",
+          "publishedAt": "2020-10-15",
+          "retrievedAt": "2026-09-13T04:07:19Z",
+          "supports": "Describes the structure between Johor Bahru and Woodlands as the 1,056-metre-long causeway."
+        },
+        {
+          "title": "The Making of the Causeway",
+          "url": "https://biblioasia.nlb.gov.sg/all-sections/vol-20-issue-2-jul-sep-2024-singapore-malaysia-johor-causeway/",
+          "publisher": "National Library Board, Singapore",
+          "retrievedAt": "2026-09-13T04:07:19Z",
+          "supports": "Publishes the planned Causeway length as 3,465 feet (1,056 metres) from bank to bank and identifies the structure as the link between the two territories."
+        }
+      ],
+      "caveats": [
+        "The 1,056 m value describes the Causeway structure from bank to bank; it is not a driving-route, approach-road, checkpoint or interchange distance.",
+        "The National Library Board passage states the proposed engineering length; the National Heritage Board separately applies the same length to the completed causeway.",
+        "The schematic endpoints are approximate and must not be used as surveyed endpoints or to recompute the published length."
+      ]
+    },
+    {
+      "id": "crossing:second-link",
+      "kind": "crossing",
+      "label": "Malaysia-Singapore Second Link",
+      "aliases": [
+        "LINKEDUA",
+        "Tuas Second Link"
+      ],
+      "area": "Tanjung Kupang, Johor–Tuas, Singapore",
+      "publishedLength": {
+        "value": 1920,
+        "unit": "m",
+        "definition": "Length of the bridge section crossing the Johor Strait, as published by the Malaysian highway operator PLUS Malaysia."
+      },
+      "geometry": {
+        "kind": "schematic",
+        "coordinates": [
+          [
+            103.6371,
+            1.3482
+          ],
+          [
+            103.6258,
+            1.3628
+          ]
+        ],
+        "endpointLabels": [
+          "Tuas, Singapore",
+          "Tanjung Kupang, Johor"
+        ],
+        "note": "Approximate display line only. Coordinates were not supplied by the cited length source and have not been surveyed or independently verified."
+      },
+      "sources": [
+        {
+          "title": "Our Expressways — Malaysia-Singapore Second Link (LINKEDUA)",
+          "url": "https://www.plus.com.my/our-expressways/",
+          "publisher": "PLUS Malaysia Berhad",
+          "retrievedAt": "2026-09-13T04:07:19Z",
+          "supports": "States that the 47-kilometre LINKEDUA highway includes a 1.92 km-long bridge crossing the Straits of Johor, linking Tanjung Kupang to Tuas."
+        }
+      ],
+      "caveats": [
+        "The 1,920 m value is the bridge section across the Johor Strait; the same source's 47 km figure is for the wider dual-three-lane LINKEDUA highway and must not be used as the crossing length.",
+        "The value is a published operator figure, not a length recalculated from the schematic line.",
+        "The schematic endpoints are approximate and must not be used as surveyed endpoints or to recompute the published length."
+      ]
+    }
+  ]
+}

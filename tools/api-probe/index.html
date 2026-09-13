@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Terra Astra — Live voice probe</title>
+  <style>
+    :root{color-scheme:dark;--ink:#e9f4f2;--muted:#91aaa9;--gold:#e5c77a;--sea:#4fc3c8;--deep:#15354b;--glass:#0b1c22d9}
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;font:15px/1.5 ui-sans-serif,system-ui;background:radial-gradient(circle at 75% 20%,#194654 0,#071318 36%,#03090c 72%);color:var(--ink)}
+    main{width:min(1120px,94vw);margin:auto;padding:42px 0 56px}.eyebrow{letter-spacing:.18em;text-transform:uppercase;color:var(--sea);font-size:11px}h1{font:500 clamp(38px,7vw,78px)/.98 Georgia,serif;margin:.2em 0;max-width:880px}h1 em{color:var(--gold);font-style:normal}.lede{font-size:18px;color:#b6ccca;max-width:760px}
+    .grid{display:grid;grid-template-columns:1.45fr .85fr;gap:18px;margin-top:30px}.card{background:var(--glass);border:1px solid #8ecbc82b;border-radius:22px;padding:22px;box-shadow:0 18px 70px #0008;backdrop-filter:blur(14px)}
+    h2{font:500 22px Georgia,serif;margin:0 0 12px}.status-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin:16px 0}.status{padding:11px;border-radius:12px;background:#061015;border:1px solid #ffffff10}.status small{display:block;color:var(--muted)}
+    button{border:0;border-radius:999px;padding:11px 17px;font-weight:700;cursor:pointer;background:var(--gold);color:#142022}button.secondary{background:#19343a;color:var(--ink)}button:disabled{opacity:.4;cursor:not-allowed}.controls{display:flex;gap:9px;flex-wrap:wrap}
+    audio{width:100%;margin-top:12px}textarea{width:100%;min-height:86px;background:#061015;color:var(--ink);border:1px solid #ffffff18;border-radius:12px;padding:12px;resize:vertical}.log,.transcript,.agent-output{white-space:pre-wrap;overflow:auto;max-height:210px;background:#040b0e;border-radius:12px;padding:12px;color:#b8cfcd;font:12px/1.5 ui-monospace,monospace}
+    .chart{position:relative;height:300px;margin-top:10px}.chart svg{width:100%;height:100%;overflow:visible}.axis{stroke:#adc8c744;stroke-width:1}.sea{stroke:#6ee5e5;stroke-width:1.4;stroke-dasharray:4 5}.profile{fill:url(#terrain);stroke:#f1d791;stroke-width:2}.dot{fill:#fff;stroke:#071318;stroke-width:2;transform-box:fill-box;transform-origin:center}.dot.emphasis{animation:pulse 1s ease-in-out 3}@keyframes pulse{50%{transform:scale(2.2);fill:#ffe58a}}.caption{color:var(--muted);font-size:12px}.caption a{color:#93dddd}.metrics{display:flex;gap:24px;margin-top:12px}.metrics strong{display:block;font:500 28px Georgia,serif;color:var(--gold)}
+    @media(max-width:800px){.grid{grid-template-columns:1fr}main{padding-top:24px}.chart{height:240px}}
+  </style>
+</head>
+<body><main>
+  <div class="eyebrow">Local API probe · Southeast Asia</div>
+  <h1>Ask the Earth to <em>show its depth.</em></h1>
+  <p class="lede">Try: “Show me Java’s mountains and the ocean floor to its south. How far does the landscape drop?” The chart below is measured from Terra Astra’s checked-in relief grid.</p>
+  <div class="grid">
+    <section class="card"><h2>Java north–south section</h2><div id="chart" class="chart" aria-label="Elevation profile across Java and the ocean floor south of it"></div><div class="metrics"><div><strong id="high">—</strong><span>highest grid sample</span></div><div><strong id="low">—</strong><span>lowest grid sample</span></div><div><strong id="range">—</strong><span>vertical range</span></div></div><p id="source" class="caption"></p></section>
+    <section class="card"><h2>GPT-Live connection</h2><div class="status-grid"><div class="status"><small>API key</small><span id="key-status">Checking…</span></div><div class="status"><small>Microphone</small><span id="mic-status">Off</span></div><div class="status"><small>Session</small><span id="session-status">Idle</span></div><div class="status"><small>Received audio</small><span id="audio-status">No track received</span></div></div><div class="controls"><button id="start" disabled>Start voice</button><button id="stop" class="secondary" disabled>Stop gracefully</button></div><audio id="audio" autoplay controls></audio><p class="caption">Automatically stops after 3 minutes. You can stop at any time. A received track alone does not prove that sound was audible.</p></section>
+    <section class="card"><h2>Live transcript</h2><div id="transcript" class="transcript" aria-live="polite">No transcript received.</div><p class="caption">User and assistant fragments are preserved separately from audio and backend work.</p></section>
+    <section class="card"><h2>Agents terrain answer</h2><textarea id="query">Show me Java’s mountains and the ocean floor to its south. How far does the landscape drop?</textarea><div class="controls"><button id="agents">Run typed question</button><button id="cancel-agents" class="secondary" disabled>Cancel run</button></div><p class="caption">A typed run answers from the checked-in Java profile. During voice, GPT-Live client delegation automatically runs the same backend and receives its verified result.</p><div id="agent-output" class="agent-output">Not run.</div></section>
+    <section class="card" style="grid-column:1/-1"><h2>Session events</h2><div id="log" class="log">Waiting.</div></section>
+  </div>
+</main><script type="module" src="/client.mjs"></script></body></html>

@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import { build } from 'esbuild';
+import { streamOpening } from '../tools/api-probe/opening.mjs';
+const bundle=await build({entryPoints:['components/terra-voice/answer-stream.ts'],bundle:true,write:false,platform:'node',format:'esm'});
+const {readAnswerStream}=await import('data:text/javascript;base64,'+Buffer.from(bundle.outputFiles[0].text).toString('base64'));
+const received=[];
+await streamOpening({apiKey:'test',question:'Angkor?',inventory:{},signal:new AbortController().signal,onDelta:t=>received.push(t),onDone:t=>received.push('done:'+t),fetchImpl:async()=>new Response('data: {"type":"response.output_text.delta","delta":"Angkor "}\n\ndata: {"type":"response.output_text.delta","delta":"Wat."}\n\ndata: {"type":"response.completed"}\n\n')});
+assert.deepEqual(received,['Angkor ','Wat.','done:Angkor Wat.']);
+const bytes=new TextEncoder().encode(JSON.stringify({type:'opening.delta',delta:'Angkor’s towers.'})+'\n'+JSON.stringify({type:'opening.done',text:'Angkor’s towers.'})+'\n'+JSON.stringify({type:'result',result:{ok:true}})+'\n');
+const stream=new ReadableStream({start(c){for(let i=0;i<bytes.length;i+=3)c.enqueue(bytes.slice(i,i+3));c.close();}});
+const text=[];assert.deepEqual(await readAnswerStream(new Response(stream,{headers:{'Content-Type':'application/x-ndjson'}}),(t,done)=>text.push([t,done])),{ok:true});
+assert.deepEqual(text,[['Angkor’s towers.',false],['Angkor’s towers.',true]]);
+await assert.rejects(()=>readAnswerStream(new Response('{"type":"opening.delta","delta":"Hello"}\n',{headers:{'Content-Type':'application/x-ndjson'}}),()=>{}),/before completion/);
+console.log('PASS streamed opening precedes final result, split UTF-8 framing, incomplete stream fails closed');
