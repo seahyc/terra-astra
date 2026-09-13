@@ -11,12 +11,12 @@ The latest user instruction authorized implementation and deployment of the livi
 - Native deployment: `appgdep_6aa61b5e76f0819197627142efb47db3`, succeeded 13 September 2026 at 11:41:33 SGT.
 - Actual public browser showed v0.5 and all four demo beats: Earth, opening Astra, the submitted three-place constellation, and returning to Earth. No console warnings or errors occurred in the tested route.
 - Depth, choreography, memory, personal-model, transformation, TypeScript, and production-build checks passed. Desktop and phone-width visual verification completed. No physical-phone validation is claimed.
-- Actual public-app demo footage was captured. The planned 90-second export is encoding; duration/playback verification and upload remain **PENDING**.
+- Actual public-app footage was captured and encoded with synthetic local narration. Native AVFoundation verified exactly 90.000 seconds, 2700 frames at 30 fps, and exact container/track timing. Key scenes and seeking were reviewed in a browser player. GitHub confirms the uploaded asset digest matches the local file; see [video evidence](DEMO-90-SECONDS.md).
 
 ## Remaining submission work
 
 - GitHub: https://github.com/shariffster/terra-astra remains **PRIVATE**. A user response about public access is pending; judge access is not complete.
-- Video: planned GitHub release `v0.5` asset `terra-astra-demo-90.mp4`. Encoding is in progress; no verified export, uploaded asset, or usable video URL is claimed yet.
+- Video: [uploaded v0.5 release](https://github.com/shariffster/terra-astra/releases/tag/v0.5), asset `terra-astra-demo-90.mp4`. It inherits the private repository access restriction; judge access is pending.
 - Portal team membership and final submission are **UNKNOWN / not confirmed**. GitHub collaborator access does not establish portal membership.
 - Verify final app, repository, and video links with judge-equivalent access and retain submission confirmation.
 
