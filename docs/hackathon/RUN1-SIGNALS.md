@@ -13,7 +13,7 @@
 
 All records explicitly carry `provenance: 'procedural'`. Aircraft anchors still come from the existing sourced Natural Earth city catalogue. Authored pairings do not assert an airline service. Orbital lights are not actual tracked spacecraft. Sea legs are not AIS or navigable shipping lanes. The connection paths do not represent real cable alignments, owners, landing sites, outages or traffic. No live claim is introduced.
 
-Use the existing signal palette: icy cyan-white satellites, pale aqua aircraft, sea-turquoise ships. Cables provide a subdued `#609FA8` thin-line color. The display radii and animation clocks are interpretive and exaggerated. Cable radius is a small visual offset, not a measured cable depth. Faintness, scale fading and draw budget remain renderer decisions; 72/120/24 are available records, not a requirement to expose every point at every scale.
+Use the existing signal palette: icy cyan-white satellites, pale aqua aircraft, sea-turquoise ships. Cables provide a subdued `#7776AD` thin-line color. The display radii and animation clocks are interpretive and exaggerated. Cable radius is a small visual offset, not a measured cable depth. Faintness, scale fading and draw budget remain renderer decisions; 72/120/24 are available records, not a requirement to expose every point at every scale.
 
 ## Interfaces
 
@@ -23,7 +23,7 @@ New `lib/world/cables.ts` exports:
 
 ```ts
 cablePaths;                 // readonly CablePath[10]
-cableColor;                 // '#609FA8'
+cableColor;                 // '#7776AD'
 cableDisclosure;            // explicit illustration / no-live-status text
 CABLE_SEGMENTS_PER_PATH;    // 64
 sampleCable(path, progress01, outXYZ);

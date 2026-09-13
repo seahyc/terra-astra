@@ -10,4 +10,27 @@ Ownership: renderer/camera exclusively `hackathon/run1-renderer`; typed movement
 
 Baseline native measurement on the existing public v0.6.1, Mac WebGL at 1027×989 CSS pixels: Singapore entry settled in 6,876ms; warm City→Street in 6,877ms; warm Street→Region in 6,917ms. Observed rolling render rate remained approximately 120fps. The first changed coordinate text appeared 401ms after entry, but that text updates only every 500ms and is not a precise first-motion measurement. Source shows every scale command uses a 6,800ms flight; cold city fetch, sorting, geometry and urban preparation also precede camera start. No network-cold browser measurement is claimed from these already-open session samples.
 
-Checkpoint results, source SHA, cuts, before/after timings and deployment evidence will be appended before 14:15. Do not label this directive document as completed delivery before integration and validation.
+## Integrated verification — before publication
+
+Responsiveness landed before richness. Native Mac WebGL candidate measurements at the same 1027×989 CSS viewport:
+
+| Journey | v0.6.1 | Run 1 |
+| --- | ---: | ---: |
+| Singapore City → Street | 6,877ms | 1,201ms |
+| Singapore Street → Region | 6,917ms | 1,206ms |
+| New York City → Street | not measured | 1,186ms |
+| Singapore full entry | 6,876ms | 6,854ms |
+
+Full destination flights intentionally retain the 6.8-second journey. The 1.1-second scale command preserves FIFO ordering and resolves after actual camera settlement. Engine diagnostics recorded SG City→Street queue 4.3ms, camera start 0.1ms after execution, actual command duration 1,106.5ms; next scale queue 3.6ms and duration 1,108.4ms. Coordinate labels update every 500ms and are not used to claim first motion.
+
+Preparation moved before the click: the native idle warm-up observed SG fetch 7.1ms / preparation 113.9ms and NY fetch 8.9ms / preparation 42.1ms. These are local session measurements, not network-cold production benchmarks. A deterministic held-fetch test independently verifies camera movement while the detail response is blocked. Repeated journeys reuse prepared geometry.
+
+Native rolling render diagnostics stayed near 120fps / 8.3ms during the measured SG/NY journeys. At 390×844 browser width, the planet, destination panel and all three layer controls fit. This is not physical-phone performance proof. Native browser console showed no warnings/errors in the reviewed candidate.
+
+Source tests cover TypeScript, response/FIFO/settlement, Genesis stable endpoints and replay, world lifecycle, shell and cable geography, bounded/cached city continuation, road-constrained activity, keyboard typing/modifier guards, memory and transformation. The inert test harness intentionally cannot create WebGL; native visual verification is separate.
+
+Cuts: sophisticated cable sources, live providers, advanced new terrain/ocean-current refinements, accurate broader OSM ingestion. Existing ETOPO relief and subtle ocean motion remain. Outside-core city fields are openly illustrative. No additional cities, backend or persona scope.
+
+Integration risk: YC public WorldCommand contract remains unchanged, but no current YC Live conversation implementation is present on the inspected remote branches. Existing 90-second video documents v0.6; recording the final integrated build belongs to the next polish/recording window. GitHub repository remains private pending judge-access arrangements.
+
+Publication SHA, tag and saved-version evidence are appended after terminal deployment verification.

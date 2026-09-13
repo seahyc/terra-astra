@@ -1,13 +1,27 @@
 /** User-facing release history. Keep historical entries tied to their saved milestones. */
-export const currentVersion = '0.6.1';
+export const currentVersion = '0.7';
 
 export const releases = [
+  {
+    version: '0.7',
+    date: '2026-09-13',
+    dateLabel: '13 September 2026',
+    title: 'A wider, more responsive world',
+    milestone: 'This build',
+    changes: [
+      'Repeated scale changes now travel in 1.1 seconds. Singapore and New York detail prepares after Genesis, and cold journeys begin moving before detail arrives.',
+      '72 orbital lights, 120 aircraft and 24 ships occupy distinct heights and routes. Faint violet undersea connections and two distant star shells extend the world around Earth.',
+      'Dim, impressionistic city fields continue beyond the mapped Singapore and lower-Manhattan cores. Road traffic follows route length and connectivity; softer activity gathers around junctions.',
+      'Focused-canvas navigation adds WASD, Q/E, R/F, T/G, scales 1–4 and reset 0. Text-entry and browser shortcuts remain separate.',
+    ],
+    review: 'Native Mac WebGL measured warm City to Street and Street to Region at about 1.2 seconds, compared with 6.9 seconds in v0.6.1. Rolling rendering remained near 120 fps in these samples. Source checks cover Genesis endpoints, loading and command settlement, geographic routes, cached continuation and keyboard guards. Movement and surrounding city fields are illustrative, not live tracking or surveyed extensions. Physical-phone performance and the separate YC Live conversation integration remain unverified.',
+  },
   {
     version: '0.6.1',
     date: '2026-09-13',
     dateLabel: '13 September 2026',
     title: 'A clearer view into the deep',
-    milestone: 'This build',
+    milestone: 'Previous release',
     changes: [
       'Challenger Deep arrives in the existing angled Horizon view, with clearer seafloor particles at regional scale.',
       'The terrain selector names the active destination. Regional approaches use matching journey language.',

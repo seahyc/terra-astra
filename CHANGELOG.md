@@ -2,6 +2,24 @@
 
 Semantic versions label the experience; Sites version numbers identify saved deployment packages. They are separate counters. `lib/terra/releases.ts` is the source for the public history page and current build badge. Git tags identify exact source snapshots; native Sites records are authoritative for save/deploy status.
 
+## v0.7 — 2026-09-13 — A wider, more responsive world
+- Run 1 authority: Richness + Responsiveness v4. Preserves v0.6.1 history and the existing renderer, Genesis and YC WorldCommand API.
+- Starts camera motion before cold city loading, prepares Singapore and New York after Genesis, retains prepared geometry, and reduces same-target scale travel from 6,800 to 1,100ms while preserving serialized completion results.
+- Adds 72 orbital, 120 aircraft and 24 sea records; multiple altitude bands, moving trails, ten faint illustrative undersea backbones, and two faint stellar depth shells.
+- Adds cached, land-masked city continuation around the detailed OSM cores. Urban traffic uses road length/connectivity and activity gathers around junction hubs. No new provider, backend or live-tracking claim.
+- Adds focused-canvas WASD/QE/RF/TG and 1–4/0 navigation; typing targets and modifier shortcuts are ignored.
+- Native Mac WebGL: warm SG City→Street 1,201ms (baseline 6,877ms), Street→Region 1,206ms (baseline 6,917ms), NY City→Street 1,186ms. Rolling render diagnostic remained near 120fps at 1027×989 CSS pixels. These are local session observations, not physical-phone or cold-network benchmarks.
+- TypeScript, renderer responsiveness, world lifecycle, Genesis, signals, cables, urban, continuation, memory and transformation checks pass. Saved-version/deployment evidence is recorded separately in RUN1-V4.md after publication.
+
+## v0.6.1 — 2026-09-13 — A clearer view into the deep
+- Historical changelog completion: this release was already recorded in public build history and tagged before Run 1; this note does not alter its source/tag.
+- Challenger Deep uses the existing angled Horizon view, with regional seafloor contrast and matching target/transition labels. Source tag: c2165327f342ef01e1a55033f16e9ec9cff1a565. Saved as Sites version 9 and deployed before Run 1.
+
+## v0.6 — 2026-09-13 — A world born from stars
+- Historical changelog completion: this release was already recorded in public build history and tagged before Run 1; this note does not alter its source/tag.
+- Existing geographic particles form a dense nucleus, eject and return to Earth. Distinct orbit/air movement, New York streets, procedural urban activity and the serializable WorldCommand bridge join the Singapore journey.
+- Source tag: 05e1a2be79c230993f19b608cd6705ea673c5da2. The preserved 90-second demo records this milestone; separate YC Live conversation integration remained pending.
+
 ## v0.5 — 2026-09-13 — A universe within
 - Opens the existing geographic particles into a deterministic volumetric stellar spiral and reforms exact original positions. GPU and sampled Canvas share the transformation math; camera actions are serialized during transitions.
 - Adds a keyboard-accessible three-place form and a 48-place sourced local catalogue. No geocoding service, credentials, persistence, or runtime model call is needed.

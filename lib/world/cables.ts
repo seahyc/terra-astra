@@ -18,7 +18,7 @@ export type CablePath = Readonly<{
   totalArc: number;
 }>;
 
-export const cableColor = '#609FA8';
+export const cableColor = '#7776AD';
 export const cableDisclosure = 'Illustrated undersea connections. Not actual cable routes or live network status.';
 export const CABLE_SEGMENTS_PER_PATH = 64;
 const TAU = Math.PI * 2;
