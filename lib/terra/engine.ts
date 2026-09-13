@@ -189,8 +189,9 @@ export async function createEarth(host:HTMLDivElement,markers:HTMLDivElement,cal
    if(tier==='city'||tier==='street'){loadingDetail=true;notifyWorld();try{if(target?.id==='singapore')await ensureCity();if(target?.id==='new-york')await ensureNewYork();}finally{loadingDetail=false;}}
    if(disposed||graphicsLost)return {ok:false,command:cmd,reason:'World is unavailable'};
    clearStory();remembering=false;remembered=null;arrivalSent=true;settledAt=null;targetId=cmd.type==='resetView'?null:target?.id??null;scaleTier=tier;highlight(targetId);
-   const destinationAlt=tier==='planet'?homeAltitude():tier==='region'?.20:tier==='city'?.0018:.00075;
-   fly(target?.lat??19,target?.lon??95,destinationAlt,tier==='city'||tier==='street'?'city':'orbit');if(flight)flight.viaPlanet=alt<.025&&destinationAlt<.025&&Math.hypot(target!.lat-lat,wrap(target!.lon-lon))>8;notifyWorld();
+   const trenchHorizon=target?.id==='challenger-deep'&&tier==='region';
+   const destinationAlt=tier==='planet'?homeAltitude():tier==='region'?(trenchHorizon?.62:.20):tier==='city'?.0018:.00075;
+   fly(target?.lat??19,target?.lon??95,destinationAlt,tier==='city'||tier==='street'?'city':'orbit');if(trenchHorizon){viewMode='oblique';targetTilt=68;callbacks.view?.('oblique');}if(flight)flight.viaPlanet=alt<.025&&destinationAlt<.025&&Math.hypot(target!.lat-lat,wrap(target!.lon-lon))>8;notifyWorld();
    if(!await waitIdle())return {ok:false,command:cmd,reason:'World is unavailable'};notifyWorld();return {ok:true,command:cmd};
   }catch{loadingDetail=false;stillFrames=0;notifyWorld();return {ok:false,command:cmd,reason:'Target detail could not load; Earth remains available'};}
  }
@@ -239,7 +240,7 @@ export async function createEarth(host:HTMLDivElement,markers:HTMLDivElement,cal
  for(const c of [reliefLand,reliefOcean,body,interior])c.points.geometry.setDrawRange(0,Math.floor(c.count*quality*(c===reliefLand?options.density:1)));
  const nearDetail=clamp((1.5-alt)/.9,0,1);
  reliefLand.points.userData.sampleBudget=36000+nearDetail*50000;reliefOcean.points.userData.sampleBudget=60000+nearDetail*100000;
- reliefLand.material.uniforms.opacity.value=depth*(1.65-opened*.28);reliefOcean.material.uniforms.opacity.value=depth*(1.15-opened*.46);body.material.uniforms.opacity.value=depth*(1.30-opened*.55);interior.material.uniforms.opacity.value=depth*(.82+cut*1.65+opened*.15);haze.material.uniforms.opacity.value=depth*(.32+cut*.35+opened*.05);halo.material.uniforms.opacity.value=depth*(.82-opened*.22);
+ reliefLand.material.uniforms.opacity.value=depth*(1.65-opened*.28);reliefOcean.material.uniforms.opacity.value=depth*(1.15-opened*.46)*(1+(targetId==='challenger-deep'&&scaleTier==='region'?2*(1-transformationEase((alt-.75)/.60)):0));body.material.uniforms.opacity.value=depth*(1.30-opened*.55);interior.material.uniforms.opacity.value=depth*(.82+cut*1.65+opened*.15);haze.material.uniforms.opacity.value=depth*(.32+cut*.35+opened*.05);halo.material.uniforms.opacity.value=depth*(.82-opened*.22);
  if(cityStars){cityStars.material.uniforms.opacity.value=singaporeVisibility*levels.city*.70*cityDim;cityStars.material.uniforms.sizeScale.value=levels.citySize;cityStars.points.geometry.setDrawRange(0,Math.floor(cityStars.count*levels.cityFraction*cityScreenBudget(w,h)));}
  if(cityCoast){cityCoast.material.uniforms.opacity.value=singaporeVisibility*levels.coast*cityDim;cityCoast.material.uniforms.sizeScale.value=.60;}
  if(streetLines)(streetLines.material as THREE.LineBasicMaterial).opacity=singaporeVisibility*levels.city*options.threads*.16*cityDim;
