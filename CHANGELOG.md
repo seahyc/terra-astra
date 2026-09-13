@@ -152,3 +152,9 @@ For rollback, select the known saved Sites version and redeploy it when authoriz
 - Makes the existing ChatGPT sign-in link a prominent, touch-sized button.
 - Removes the manual model-library picker from the answer panel while preserving automatic model selection and named-part controls.
 - Records the production v0.8.1 mobile answer/model and metadata-export checks, with remaining evaluation limits.
+
+## v0.8.3 — 2026-09-13 — Keep the conversation going
+- Keeps the voice session and transcript active when browser autoplay blocks remote audio.
+- Adds a compact Enable audio / Retry audio action that calls playback directly from the user gesture, including while an answer is being prepared.
+- Primes the same audio element during voice startup and prevents stale playback attempts from changing a stopped or replaced session.
+- Validation includes controller regression checks and isolated browser recovery using a synthetic MediaStream; no physical-microphone or public audio audition is claimed.
