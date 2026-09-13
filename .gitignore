@@ -49,3 +49,5 @@ next-env.d.ts
 /data-source/
 /.worktrees/
 /tools/api-probe/probe-report.json
+
+/.dev.vars

@@ -152,3 +152,7 @@ For rollback, select the known saved Sites version and redeploy it when authoriz
 - Corrects v0.7.2 import-time telemetry initialization. That release was saved and deployed, but live page verification failed; production was restored to v0.7.1 while this correction was prepared. Recorder now initializes only on browser use; SSR imports perform no random/clock work.
 - Includes separately committed real-data adapters and a cancellable poller as preparation; visible movement layers are not yet connected to those feeds in this release.
 - Validation: targeted model, renderer lifecycle, HTTP/answer routing, voice and telemetry regression checks; TypeScript. A real local Borobudur question generated both a model on the globe and an explanatory image. Browser viewport checks include desktop and phone widths; physical-phone and microphone audio testing remain separate.
+
+- Reuses six prepared/approved models, including the generated turbine, and saves new validated recipes to shared D1 with hashed exact lookup and bounded semantic candidates.
+- Starts Live independently of model work; exposes recipe generation through a native Agents function with a 15-second recipe deadline, cancellation and Worker cleanup.
+- Renders named, animated parts through the existing globe shader and geographic WorldCommand engine. Keeps measured Java values separate from generated geometry.

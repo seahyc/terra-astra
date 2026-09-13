@@ -13,7 +13,7 @@ import { classifyTelemetryError, downloadTelemetryReport, navigationTurnOutcome,
 import { catalogueTargetIdInQuestion, executeLiveNavigation, planLiveNavigation } from './world-navigator';
 import { suggestedPerspective } from './world-navigator';
 import AnswerImage from './AnswerImage';
-import { validateProceduralModelRecipe, type ProceduralModelRecipe } from '../../lib/terra/sculptures/procedural-model';
+import { matchLibrary, validateLibraryModel } from '../../lib/terra/model-library/library.mjs';
 
 type Props = { ready: boolean; onAskReady: (ask: ((question: string) => void) | null) => void };
 
@@ -95,9 +95,11 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
   const [rows, setRows] = useState<{who:'user'|'assistant';text:string}[]>([]);
   const [busy, setBusy] = useState(false);
   const [answerImage, setAnswerImage] = useState<{ title: string; imageUrl?: string; loading: boolean; error?: string } | null>(null);
-  const [modelStatus, setModelStatus] = useState<{ title: string; phase: 'building' | 'ready' | 'error' } | null>(null);
+  const [modelStatus, setModelStatus] = useState<{ title: string; phase: 'building' | 'ready' | 'error'; persisted?: boolean; measured?: boolean } | null>(null);
   const [navigationState, setNavigationState] = useState<WorldState | null>(() => getWorldState());
   const [transcriptBaseline, setTranscriptBaseline] = useState({ userIndex: -1, userText: '' });
+  const [libraryEntries,setLibraryEntries]=useState<Array<{id:string;title:string;question?:string}>>([]);
+  useEffect(()=>{const controller=new AbortController();void fetch('/api/terra/models',{signal:controller.signal}).then(r=>r.json()).then(body=>setLibraryEntries(z.object({models:z.array(z.object({id:z.string(),title:z.string(),question:z.string().optional()}))}).parse(body).models)).catch(()=>{});return()=>controller.abort();},[busy]);
   const live = useRef<ReturnType<typeof createLiveController> | null>(null);
   const active = useRef<AbortController | null>(null), revision = useRef(0);
   const activeTurnRef = useRef<string | null>(null);
@@ -107,11 +109,14 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
   const imageTelemetryRef = useRef<{ turnId: string; started: number } | null>(null);
   const dockRef = useRef<HTMLElement | null>(null);
   const askRef = useRef<(question: string, delegationId?: string) => void>(() => {});
+  const voiceFirstRef=useRef<string|null>(null);
   const emphasize = useCallback((text: string) => {
+    const turn=activeTurnRef.current;if(turn&&voiceFirstRef.current!==turn){voiceFirstRef.current=turn;telemetry.record('voice.response',{phase:'first_transcript'},turn);}
     const phrases=text.match(/[^.!?]+[.!?]+(?:\s|$)|[^.!?]+$/g)??[text];
     setSpokenCaption(phrases.at(-1)?.trim()??text);
+    const phrase=(phrases.at(-1)??text).toLowerCase();const part=getWorldState()?.proceduralModel?.parts?.find(p=>phrase.includes(p.label.toLowerCase()));if(part)void sendWorldCommand({type:'focusModelPart',id:part.id});
   }, []);
-  const ask = useCallback(async (question: string, delegationId?: string) => {
+  const ask = useCallback(async (question: string, delegationId?: string, preferredId?: string) => {
     if (!ready || !question.trim()) return;
     if (active.current && activeTurnRef.current) telemetry.record('turn.cancelled', { reason: 'superseded' }, activeTurnRef.current);
     if (imageAbortRef.current && imageTelemetryRef.current) telemetry.record('image.lifecycle', { phase: 'cancelled', duration_ms: performance.now() - imageTelemetryRef.current.started }, imageTelemetryRef.current.turnId);
@@ -121,7 +126,7 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
     imageAbortRef.current?.abort(); imageAbortRef.current = null;
     modelAbortRef.current?.abort(); modelAbortRef.current = null;
     modelTelemetryRef.current = null;
-    void sendWorldCommand({ type: 'clearProceduralModel' }).catch(() => {});
+    void sendWorldCommand({ type: 'cancelWorldTurn' }).catch(() => {});
     imageTelemetryRef.current = null;
     const turnId = telemetry.beginTurn(delegationId ? 'voice' : 'typed', question.trim().length);
     activeTurnRef.current = turnId;
@@ -150,7 +155,7 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
       } });
     };
     try {
-      const navigationPlan = navigationState ? planLiveNavigation(question) : null;
+      const navigationPlan = navigationState && !preferredId ? planLiveNavigation(question) : null;
       if (navigationPlan) {
         setProgress('Moving through the world…');
         let acknowledged = false;
@@ -182,7 +187,35 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
             return navigate({ commands: [{ type: 'setPerspective', perspective: initialPerspective }], acknowledgement: '', context: '' });
           })()
         : null;
-      live.current?.context(`User question: ${question}. Wait for the backend answer and answer only from what it returns.`);
+      live.current?.say(delegationId ?? null, `Answer the central idea of this question now in two short sentences from stable knowledge: ${question}. Grounded details and a model are being prepared concurrently; do not claim a model is visible or invent measurements.`);
+      const prepared = matchLibrary(question);
+      const wantsModel = Boolean(preferredId || prepared || /\b(model|3d|structure|architecture|mechanism|engine|pump|turbine|bridge|volcano|building|machine|works?|inside|shape|anatomy|robot|satellite|heart|lighthouse|gear|telescope)\b/i.test(question));
+      let resolvedModelTarget: GeneratedWorldTarget | undefined;
+      let modelPromise: Promise<void> | null = null;
+      const startModel = () => {
+        const modelController = new AbortController(); modelAbortRef.current=modelController;
+        const modelSignal=AbortSignal.any([controller.signal,modelController.signal]);
+        const modelStarted=performance.now(); modelTelemetryRef.current={turnId,started:modelStarted};
+        telemetry.record('model.lifecycle',{phase:'requested'},turnId);setModelStatus({title:prepared?.title??'model',phase:'building'});
+        return (async()=>{
+          const response=await fetch('/api/terra/library-model',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:question,...(preferredId?{preferredId}:{})}),signal:modelSignal});
+          if(!response.ok)throw new Error('Model unavailable');const payload=z.object({recipe:z.unknown(),via:z.string(),persisted:z.boolean()}).parse(await response.json());const recipe=validateLibraryModel(payload.recipe);
+          if(initialJourney)await initialJourney;if(initialPerspectiveJourney)await initialPerspectiveJourney;
+          if(id!==revision.current||modelSignal.aborted)return;
+          const state=getWorldState();const anchor=recipe.anchor?{...recipe.anchor,span:12}:resolvedModelTarget??(queryTarget?{name:queryTarget.label,latitude:queryTarget.lat,longitude:queryTarget.lon,span:12}:state?.location??null);
+          const commands:WorldCommand[]=[];
+          if(anchor)commands.push({type:'flyToLocation',...anchor});
+          else {const coordinates=prepared?.anchor; if(coordinates)commands.push({type:'flyToLocation',...coordinates,span:12});}
+          commands.push({type:'setPerspective',perspective:'horizon'},{type:'showLibraryModel',recipe,...(anchor?{anchor}:{})});
+          const shown=await navigate({commands,acknowledgement:'',context:''});
+          if(id!==revision.current||modelSignal.aborted)return;
+          if(!shown.ok)throw new Error('Model could not be placed');
+          telemetry.record('model.lifecycle',{phase:'ready',duration_ms:performance.now()-modelStarted,point_count:getWorldState()?.proceduralModel?.pointCount,model:'gpt-5.6-luna',cached:payload.via!=='procedural',persisted:payload.persisted},turnId);
+          setModelStatus({title:recipe.title,phase:'ready',persisted:payload.persisted,measured:recipe.special==='java'});
+          live.current?.context(`The model ${recipe.title} is now visible. Named parts: ${getWorldState()?.proceduralModel?.parts?.map(p=>p.label).join(', ')}. Geometry is validated, not factual proof.`);
+        })().catch(()=>{if(id===revision.current&&!modelSignal.aborted){setModelStatus({title:prepared?.title??'model',phase:'error'});telemetry.record('model.lifecycle',{phase:'error',duration_ms:performance.now()-modelStarted},turnId);}}).finally(()=>{if(modelAbortRef.current===modelController){modelAbortRef.current=null;modelTelemetryRef.current=null;}});
+      }
+      if(wantsModel)modelPromise=startModel();
       let response: Response | undefined;
       for (let attempt = 0; attempt < 12; attempt++) {
         controller.signal.throwIfAborted();
@@ -201,7 +234,7 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
         if (!openingSeen) { openingSeen = true; telemetry.record('answer.opening', { phase: 'first', duration_ms: performance.now() - answerStarted }, turnId); }
         if (complete) telemetry.record('answer.opening', { phase: 'complete', duration_ms: performance.now() - answerStarted }, turnId);
         setOpening(text);
-        if(complete) live.current?.say(delegationId??null, text);
+        if(complete) live.current?.context(`Verified answer opening: ${text}`);
       }));
       if (!response!.ok) throw new Error(result.error || 'The explanation could not be completed.');
       if (id !== revision.current || controller.signal.aborted) return;
@@ -210,34 +243,8 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
       const explanation = result.measured.output.replace(/\*\*|^[-#]\s/gm,'').replace(/cite[^]+/g, '');
       setAnswer(explanation); setSources(result.sources ?? []); setProgress('');
       if (result.world) setWorld(result.world);
-      let modelPromise: Promise<{ recipe: ProceduralModelRecipe; model?: string } | null> | null = null;
-      let modelStarted = 0;
-      if (result.world?.modelBrief) {
-        const brief = result.world.modelBrief;
-        const modelController = new AbortController();
-        modelAbortRef.current = modelController;
-        modelStarted = performance.now();
-        modelTelemetryRef.current = { turnId, started: modelStarted };
-        telemetry.record('model.lifecycle', { phase: 'requested' }, turnId);
-        setModelStatus({ title: brief.title, phase: 'building' });
-        modelPromise = fetch('/api/terra/model', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({query:question, brief}), signal:modelController.signal })
-          .then(async response => {
-            if (!response.ok) throw new Error('The model could not be generated.');
-            const payload: unknown = await response.json();
-            if (!payload || typeof payload !== 'object' || !('recipe' in payload)) throw new TypeError('The model response was incomplete.');
-            const rawModel = (payload as Record<string, unknown>).model;
-            return { recipe: validateProceduralModelRecipe((payload as Record<string, unknown>).recipe), ...(typeof rawModel === 'string' ? { model: rawModel } : {}) };
-          })
-          .catch(() => {
-            if (id === revision.current && !modelController.signal.aborted) {
-              telemetry.record('model.lifecycle', { phase: 'error', duration_ms: performance.now() - modelStarted }, turnId);
-              setModelStatus({ title: brief.title, phase: 'error' });
-              if (modelTelemetryRef.current?.turnId === turnId) modelTelemetryRef.current = null;
-            }
-            return null;
-          })
-          .finally(() => { if (modelAbortRef.current === modelController) modelAbortRef.current = null; });
-      }
+      resolvedModelTarget=result.world?.targets[0];
+      if(!modelPromise && result.world?.modelBrief)modelPromise=startModel();
       if (result.world?.imageBrief) {
         const brief = result.world.imageBrief;
         const imageController = new AbortController();
@@ -277,7 +284,7 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
       if (result.world) {
         const target = result.world.targets[0];
         const supported = target ? catalogueTarget(target) : null;
-        if (target && (!supported || supported.id !== queryTarget?.id) && navigationState) {
+        if (!modelPromise && target && (!supported || supported.id !== queryTarget?.id) && navigationState) {
           const command: WorldCommand = supported ? { type:'flyTo',targetId:supported.id } : { type:'flyToLocation', ...target };
           const navigation = await navigate({ commands: [command], acknowledgement: '', context: '' });
           if (!navigation.ok) { navigationFailed(); return; }
@@ -289,45 +296,14 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
         if (!navigation.ok) { navigationFailed(); return; }
       }
       if (id !== revision.current || controller.signal.aborted) return;
-      const finalPerspective = result.world?.perspective;
+      const finalPerspective = modelPromise ? null : result.world?.perspective;
       if (finalPerspective && getWorldState()?.perspective !== finalPerspective) {
         const navigation = await navigate({ commands: [{ type: 'setPerspective', perspective: finalPerspective }], acknowledgement: '', context: '' });
         if (!navigation.ok) { navigationFailed(); return; }
       }
       if (id !== revision.current || controller.signal.aborted) return;
-      live.current?.say(delegationId ?? null, `Continue naturally with at most three short sentences without repeating the opening. ${explanation}`);
-      if (modelPromise) {
-        const generated = await modelPromise;
-        if (generated && (id !== revision.current || controller.signal.aborted)) {
-          telemetry.record('model.lifecycle', { phase: 'stale', duration_ms: performance.now() - modelStarted, model: generated.model }, turnId);
-          if (modelTelemetryRef.current?.turnId === turnId) modelTelemetryRef.current = null;
-        } else if (generated) {
-          const anchor = result.world?.targets[0];
-          const asksForOtherPerspective = /\b(?:aerial|aerial view|from above|top down|overhead|cutaway|cut away|cross section|inside view)\b/i.test(question);
-          let canShow = true;
-          if (!asksForOtherPerspective && getWorldState()?.perspective !== 'horizon') {
-            const framed = await navigate({ commands: [{ type: 'setPerspective', perspective: 'horizon' }], acknowledgement: '', context: '' });
-            if (id !== revision.current || controller.signal.aborted) {
-              telemetry.record('model.lifecycle', { phase: 'stale', duration_ms: performance.now() - modelStarted, model: generated.model }, turnId);
-              if (modelTelemetryRef.current?.turnId === turnId) modelTelemetryRef.current = null;
-              canShow = false;
-            } else if (!framed.ok) {
-              telemetry.record('model.lifecycle', { phase: 'error', duration_ms: performance.now() - modelStarted, model: generated.model }, turnId);
-              if (modelTelemetryRef.current?.turnId === turnId) modelTelemetryRef.current = null;
-              navigationFailed(); canShow = false;
-            }
-          }
-          const shown = canShow ? await navigate({ commands: [{ type: 'showProceduralModel', recipe: generated.recipe, ...(anchor ? { anchor } : {}) }], acknowledgement: '', context: '' }) : null;
-          if (shown && (id !== revision.current || controller.signal.aborted)) {
-            telemetry.record('model.lifecycle', { phase: 'stale', duration_ms: performance.now() - modelStarted, model: generated.model }, turnId);
-            if (modelTelemetryRef.current?.turnId === turnId) modelTelemetryRef.current = null;
-          } else if (shown?.ok) {
-            telemetry.record('model.lifecycle', { phase: 'ready', point_count: generated.recipe.primitives.reduce((sum, primitive) => sum + primitive.sampleCount, 0), duration_ms: performance.now() - modelStarted, model: generated.model }, turnId);
-            if (modelTelemetryRef.current?.turnId === turnId) modelTelemetryRef.current = null;
-            setModelStatus(current => current ? { ...current, phase: 'ready' } : current);
-          } else if (shown) { telemetry.record('model.lifecycle', { phase: 'error', duration_ms: performance.now() - modelStarted, model: generated.model }, turnId); if (modelTelemetryRef.current?.turnId === turnId) modelTelemetryRef.current = null; navigationFailed(); }
-        }
-      }
+      live.current?.context(`Grounded backend answer for the current question: ${explanation}. Use this to correct any material discrepancy in your first explanation, without repeating it.`);
+      if(modelPromise)await modelPromise;
     } catch (e) {
       if (id !== revision.current || controller.signal.aborted) return;
       turnOutcome = 'error';
@@ -373,7 +349,7 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
     imageAbortRef.current?.abort(); imageAbortRef.current = null;
     modelAbortRef.current?.abort(); modelAbortRef.current = null;
     modelTelemetryRef.current = null;
-    void sendWorldCommand({ type: 'clearProceduralModel' }).catch(() => {});
+    void sendWorldCommand({ type: 'cancelWorldTurn' }).catch(() => {});
     imageTelemetryRef.current = null;
     if (busy) setAnswer('');
     setOpening(''); setSpokenCaption(''); setAnswerImage(null); setModelStatus(null); setRows(current => current.filter(row => row.who === 'user').slice(-1));
@@ -399,7 +375,10 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
     {busy && !answer && <div className={styles.editorialLoading} role="status"><span/><span/><span/><small>{progress || 'Thinking'}</small></div>}
     {editorialAnswer.lead && <div className={styles.editorialCopy}>{answerWithLinks(editorialAnswer.lead)}</div>}
     {answerImage && <AnswerImage title={answerImage.title} imageUrl={answerImage.imageUrl} loading={answerImage.loading} error={answerImage.error}/>}
-    {modelStatus && <p className={styles.modelStatus} role="status">{modelStatus.phase === 'building' ? `Shaping ${modelStatus.title}…` : modelStatus.phase === 'ready' ? `${modelStatus.title} is now on the globe.` : `The ${modelStatus.title} model was unavailable.`}</p>}
+    {libraryEntries.length>0 && <label className={styles.library}>Model library <select aria-label="Model library" value="" onChange={event=>{const entry=libraryEntries.find(e=>e.id===event.target.value);if(entry)void ask(entry.question??`Explain ${entry.title}`,undefined,entry.id);}}><option value="">Choose a model…</option>{libraryEntries.map(entry=><option key={entry.id} value={entry.id}>{entry.title}</option>)}</select></label>}
+    {navigationState?.proceduralModel?.parts && <div className={styles.parts} aria-label="Model parts">{navigationState.proceduralModel.parts.map(part=><button key={part.id} type="button" onClick={()=>void sendWorldCommand({type:'focusModelPart',id:part.id})}>{part.label}</button>)}<button type="button" onClick={()=>void sendWorldCommand({type:'focusModelPart',id:null})}>All parts</button></div>}
+    {modelStatus && <p className={styles.modelStatus} role="status">{modelStatus.phase === 'building' ? `Shaping ${modelStatus.title}…` : modelStatus.phase === 'ready' ? `${modelStatus.title} is now on the globe.${modelStatus.persisted === false ? ' Library saving is unavailable for this model.' : ''}` : `The ${modelStatus.title} model was unavailable.`}</p>}
+    {modelStatus?.phase==='ready' && <details className={styles.modelEvidence}><summary>About this model</summary><p>{modelStatus.measured?'121 checked-in NOAA ETOPO samples along 112.922°E. Horizontal distance: km; elevation: m. Highest sample +984 m, lowest −5,361 m. These are transect samples, not summit or deepest-trench measurements; axes are scaled independently.':'Conceptual geometry with validated shapes and bounds. Dimensions and motion explain the subject; they are not surveyed measurements or independent factual verification.'}</p></details>}
     {answer && detailedAnswer && <details className={styles.moreDetail}><summary>More detail</summary><div>{answerWithLinks(detailedAnswer)}</div></details>}
     {sources.length > 0 && <p className={styles.sources}>Sources: {sources.map((source,index) => <span key={source.url}>{index > 0 ? ' · ' : ''}<a href={source.url} target="_blank" rel="noopener noreferrer">{source.title}</a></span>)}</p>}
   </aside>}
@@ -411,7 +390,7 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
     {needsSignIn && <p className={styles.statusLine}><a href="/signin-with-chatgpt?return_to=%2F">Sign in with ChatGPT for voice, answers and images</a></p>}
     <div className={styles.inputRow}>
       <QuestionBar onQuestion={ask} disabled={!ready} busy={busy} onCancel={cancel}/>
-      <button className={`${styles.voiceButton} ${isOn ? styles.active : ''}`} type="button" disabled={!ready || busy} onClick={() => isOn ? cancel() : void live.current?.start()} aria-label={isOn ? busy ? 'Voice active while answering' : 'Stop voice' : 'Talk to Earth'} title={isOn ? busy ? 'Voice active while answering' : 'Stop voice' : 'Talk to Earth'}>{isOn && !busy ? <Square size={15}/> : <Mic size={19}/>}</button>
+      <button className={`${styles.voiceButton} ${isOn ? styles.active : ''}`} type="button" disabled={!ready || (busy && !isOn)} onClick={() => isOn ? cancel() : void live.current?.start()} aria-label={isOn ? busy ? 'Voice active while answering' : 'Stop voice' : 'Talk to Earth'} title={isOn ? busy ? 'Voice active while answering' : 'Stop voice' : 'Talk to Earth'}>{isOn && !busy ? <Square size={15}/> : <Mic size={19}/>}</button>
       <details className={styles.diagnostics}><summary aria-label="Diagnostics" title="Diagnostics"><MoreHorizontal size={19}/></summary><div><button type="button" onClick={downloadTelemetryReport}>Export debug report</button><button type="button" onClick={() => telemetry.clear()}>Clear diagnostics</button><p>Stored only in this tab. Raw questions, answers, audio, images, and credentials are excluded.</p></div></details>
     </div>
     {visibleVoiceStatus && <p className={styles.live}>{visibleVoiceStatus}</p>}

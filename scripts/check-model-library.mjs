@@ -1,0 +1,25 @@
+import assert from 'node:assert/strict';
+import {build} from 'esbuild';
+import {createLibraryService} from '../lib/terra/model-library/service.mjs';
+import {createD1ModelStore} from '../lib/terra/model-library/store.mjs';
+import {DatabaseSync} from 'node:sqlite';
+import {readFileSync,mkdtempSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {publicLibrary,libraryRecipe,validateLibraryModel} from '../lib/terra/model-library/library.mjs';
+const file=join(mkdtempSync(join(tmpdir(),'terra-model-')),'models.sqlite');
+const connect=()=>{const db=new DatabaseSync(file);return {db,prepare(sql){const statement=db.prepare(sql);return {bind(...args){return {first:async()=>statement.get(...args),all:async()=>({results:statement.all(...args)}),run:async()=>statement.run(...args),_run:()=>statement.run(...args)};},all:async()=>({results:statement.all()})};},async batch(items){db.exec('BEGIN');try{items.forEach(i=>i._run());db.exec('COMMIT');}catch(e){db.exec('ROLLBACK');throw e;}}};};
+const database=connect();database.db.exec(readFileSync(new URL('../drizzle/0000_certain_william_stryker.sql',import.meta.url),'utf8'));let store=createD1ModelStore(database);
+let calls=0;const signal=new AbortController().signal;
+const library=createLibraryService({store,fetchImpl:async()=>{calls++;throw new Error('Unexpected network');}});
+for(const entry of publicLibrary()){const result=await library.generate({input:{query:entry.question,preferredId:entry.id},signal});assert.equal(result.via,'library');assert.ok(result.recipe);}
+assert.equal(calls,0);assert.equal((await library.list()).length,6);
+assert.throws(()=>validateLibraryModel({title:'bad',parts:[{shape:'script'}]}));
+const recipe=libraryRecipe('wind-turbine');const saved=await store.save('A private question not to store',recipe,{geometryValidated:true},signal);assert.equal((await store.find('A private question not to store')).id,saved.id);
+await store.save('A different paraphrase',recipe,{geometryValidated:true},signal);assert.equal((await store.list()).length,1);
+assert.ok((await store.candidates('wind turbine rotor')).some(e=>e.id===saved.id));
+database.db.close();const reopened=connect();store=createD1ModelStore(reopened);assert.equal((await store.find('A different paraphrase')).id,saved.id);assert.ok(!JSON.stringify(reopened.db.prepare('SELECT * FROM model_recipes').all()).includes('private question'));
+const bundle=await build({entryPoints:['lib/terra/model-library/geometry.mjs'],bundle:true,write:false,platform:'node',format:'esm',external:['three']});
+const {writeFileSync,unlinkSync}=await import('node:fs');const out=new URL('../.model-geometry-check.mjs',import.meta.url);writeFileSync(out,bundle.outputFiles[0].text);const {compileModel}=await import(out.href);const THREE=await import('three');
+for(const entry of publicLibrary()) {const model=compileModel(libraryRecipe(entry.id),(p,c,o)=>{const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));return new THREE.Points(g,new THREE.ShaderMaterial({uniforms:{reveal:{value:0},opacity:{value:1}}}));},p=>{p.geometry.dispose();p.material.dispose();});assert.ok(model.pointCount>100&&model.pointCount<=20000);model.update(2);model.group.traverse(p=>{if(p.isPoints)assert.ok([...p.geometry.getAttribute('position').array].every(Number.isFinite));});console.log(`PASS ${entry.id}: ${model.pointCount} finite points, ${model.parts.length} named parts`);model.dispose();}unlinkSync(out);
+console.log('PASS six library hits without inference; strict geometry; deduplication; bounded candidates; hashed queries; persisted exact reuse after SQLite reopen.');

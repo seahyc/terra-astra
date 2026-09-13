@@ -1,0 +1,266 @@
+{
+  "title": "Conceptual Wind Turbine: Wind to Electricity",
+  "parts": [
+    {
+      "id": "tower",
+      "label": "Tower",
+      "shape": "cone",
+      "position": [
+        0,
+        1.6,
+        0
+      ],
+      "size": [
+        0.55,
+        3.2,
+        0.8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "tone": "ivory",
+      "motion": null
+    },
+    {
+      "id": "nacelle",
+      "label": "Nacelle",
+      "shape": "box",
+      "position": [
+        0,
+        3.35,
+        0
+      ],
+      "size": [
+        1.25,
+        0.55,
+        0.7
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "tone": "gold",
+      "motion": null
+    },
+    {
+      "id": "rotor",
+      "label": "Rotor hub",
+      "shape": "cylinder",
+      "position": [
+        -0.7,
+        3.35,
+        0
+      ],
+      "size": [
+        0.45,
+        0.35,
+        0.45
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5708
+      ],
+      "tone": "gold",
+      "motion": {
+        "kind": "rotate",
+        "axis": "x",
+        "speed": 1.2,
+        "amplitude": 0,
+        "pivot": [
+          -0.7,
+          3.35,
+          0
+        ]
+      }
+    },
+    {
+      "id": "blade1",
+      "label": "Rotor blade",
+      "shape": "cone",
+      "position": [
+        -1.35,
+        3.35,
+        0
+      ],
+      "size": [
+        0.22,
+        1.7,
+        0.12
+      ],
+      "rotation": [
+        0,
+        1.5708,
+        0
+      ],
+      "tone": "ivory",
+      "motion": {
+        "kind": "rotate",
+        "axis": "x",
+        "speed": 1.2,
+        "amplitude": 0,
+        "pivot": [
+          -0.7,
+          3.35,
+          0
+        ]
+      }
+    },
+    {
+      "id": "blade2",
+      "label": "Rotor blade",
+      "shape": "cone",
+      "position": [
+        -0.7,
+        4.05,
+        0
+      ],
+      "size": [
+        0.22,
+        1.7,
+        0.12
+      ],
+      "rotation": [
+        0,
+        1.5708,
+        1.5708
+      ],
+      "tone": "ivory",
+      "motion": {
+        "kind": "rotate",
+        "axis": "x",
+        "speed": 1.2,
+        "amplitude": 0,
+        "pivot": [
+          -0.7,
+          3.35,
+          0
+        ]
+      }
+    },
+    {
+      "id": "blade3",
+      "label": "Rotor blade",
+      "shape": "cone",
+      "position": [
+        -0.7,
+        2.65,
+        0
+      ],
+      "size": [
+        0.22,
+        1.7,
+        0.12
+      ],
+      "rotation": [
+        0,
+        1.5708,
+        4.7124
+      ],
+      "tone": "ivory",
+      "motion": {
+        "kind": "rotate",
+        "axis": "x",
+        "speed": 1.2,
+        "amplitude": 0,
+        "pivot": [
+          -0.7,
+          3.35,
+          0
+        ]
+      }
+    },
+    {
+      "id": "generator",
+      "label": "Generator",
+      "shape": "cylinder",
+      "position": [
+        0.25,
+        3.35,
+        0
+      ],
+      "size": [
+        0.48,
+        0.75,
+        0.48
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5708
+      ],
+      "tone": "violet",
+      "motion": null
+    },
+    {
+      "id": "electricity",
+      "label": "Electricity flow",
+      "shape": "torus",
+      "position": [
+        0.65,
+        3.35,
+        0
+      ],
+      "size": [
+        0.55,
+        0.12,
+        0.55
+      ],
+      "rotation": [
+        1.5708,
+        0,
+        0
+      ],
+      "tone": "violet",
+      "motion": {
+        "kind": "pulse",
+        "axis": "x",
+        "speed": 1.5,
+        "amplitude": 0.12,
+        "pivot": [
+          0.65,
+          3.35,
+          0
+        ]
+      }
+    },
+    {
+      "id": "wind",
+      "label": "Wind flow",
+      "shape": "cone",
+      "position": [
+        -2.55,
+        3.35,
+        0
+      ],
+      "size": [
+        0.6,
+        1.5,
+        0.6
+      ],
+      "rotation": [
+        0,
+        0,
+        1.5708
+      ],
+      "tone": "blue",
+      "motion": {
+        "kind": "translate",
+        "axis": "x",
+        "speed": 0.8,
+        "amplitude": 0.5,
+        "pivot": [
+          -2.55,
+          3.35,
+          0
+        ]
+      }
+    }
+  ],
+  "anchor": null,
+  "source": "procedural",
+  "special": null
+}

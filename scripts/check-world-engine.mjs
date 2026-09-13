@@ -11,7 +11,7 @@ import { memoryLight, cityScreenBudget } from '../lib/terra/choreography.ts';
 
 const root = new URL('../lib/', import.meta.url).href;
 registerHooks({ resolve(specifier, context, next) {
-  if (context.parentURL?.startsWith(root) && specifier.startsWith('.') && !specifier.endsWith('.ts')) return next(specifier + '.ts', context);
+  if (context.parentURL?.startsWith(root) && specifier.startsWith('.') && ! /\.(?:ts|mjs|json)$/.test(specifier)) return next(specifier + '.ts', context);
   return next(specifier, context);
 } });
 let clock = 0, frame = null, resizeCallback = null;
@@ -112,6 +112,16 @@ for(const invalid of [{...tokyo,latitude:NaN},{...tokyo,longitude:181},{...tokyo
 const pendingTokyo=engine.command(tokyo);await complete({type:'resetView'});assert.equal((await pendingTokyo).ok,true);assert.equal(engine.worldState().location,undefined);assert.equal(engine.worldState().targetId,null,'Queued reset clears arbitrary anchor');
 
 engine.configure({...baseOptions,motion:true});const flight=engine.command({type:'flyTo',targetId:'challenger-deep'});for(let i=0;i<5;i++){await Promise.resolve();tick(100);}host.clientWidth=390;host.clientHeight=844;resizeCallback();for(let i=0;i<80;i++){tick(100);await Promise.resolve();}assert.equal((await flight).ok,true);assert.ok(Math.abs(rendered.camera.position.distanceTo(trenchAnchor)-.62)<1e-6,'In-flight regional resize retains its intended horizon altitude');engine.region('indonesia');assert.equal(engine.worldState().targetId,null,'Explicit depth preset clears old command target');
+const {libraryRecipe}=await import('../lib/terra/model-library/library.mjs');
+await complete(tokyo);
+assert.equal((await complete({type:'showLibraryModel',recipe:libraryRecipe('wind-turbine')})).ok,true);tick();
+assert.equal(engine.worldState().proceduralModel.parts.length,9);
+assert.ok(objects().filter(o=>o.userData.libraryModel).length>0,'Library clouds use the real Earth renderer');
+assert.equal((await complete({type:'focusModelPart',id:'tower'})).ok,true);
+engine.configure({...baseOptions,motion:true});const staleFlight=engine.command({type:'flyTo',targetId:'singapore'});const staleModel=engine.command({type:'showLibraryModel',recipe:libraryRecipe('port')});
+await engine.command({type:'cancelWorldTurn'});for(let i=0;i<10;i++){tick(100);await Promise.resolve();}
+assert.equal((await staleFlight).ok,false);assert.equal((await staleModel).ok,false);assert.equal(engine.worldState().proceduralModel,undefined);
+console.log('PASS library uses shared globe clouds and named parts; a new turn invalidates queued camera/model commands.');
 const lostCommand=engine.command({type:'flyTo',targetId:'singapore'});for(let i=0;i<6;i++){await Promise.resolve();tick(100);}assert.ok(graphicsLostCallback);graphicsLostCallback({preventDefault(){}});assert.equal((await lostCommand).ok,false,'Graphics loss settles active command');assert.equal((await engine.command({type:'resetView'})).ok,false,'Graphics loss rejects later commands');
 engine.dispose();assert.equal(frame,null);
 console.log('PASS: distinct orbital/aircraft shells with trails; real pause of positions; layer toggles; serialized target/scale commands; sourced NYC detail and activity; SG return; Mariana region; reset; invalid command. Inert Canvas lifecycle, not pixel/performance evidence.');

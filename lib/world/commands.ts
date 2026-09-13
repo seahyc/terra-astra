@@ -1,3 +1,4 @@
+import { validateLibraryModel } from '../terra/model-library/library.mjs';
 import { validateProceduralModelRecipe, type ProceduralModelRecipe } from '../terra/sculptures/procedural-model';
 /** Serializable boundary for YC's Live navigator. Rendering stays inside the engine. */
 export type ScaleTier = 'planet' | 'region' | 'city' | 'street';
@@ -13,10 +14,13 @@ export type WorldCommand =
   | { type: 'highlightTarget'; targetId: string }
   | { type: 'showProceduralModel'; recipe: ProceduralModelRecipe; anchor?: WorldLocation }
   | { type: 'clearProceduralModel' }
+  | { type: 'showLibraryModel'; recipe: ReturnType<typeof validateLibraryModel>; anchor?: WorldLocation }
+  | { type: 'focusModelPart'; id: string | null }
+  | { type: 'cancelWorldTurn' }
   | { type: 'resetView' };
 export type GenesisPhase = 'core' | 'compression' | 'ignition' | 'ejection' | 'capture' | 'settlement' | 'complete';
 export type GenesisState = Readonly<{ phase: GenesisPhase; progress: number; busy: boolean }>;
-export type WorldState = Readonly<{ targetId: string | null; location?: WorldLocation; proceduralModel?: Readonly<{id:string;title:string;pointCount:number}>; tier: ScaleTier; perspective: WorldPerspective; busy: boolean; genesis: GenesisState; layers: Readonly<Record<WorldLayer, boolean>> }>;
+export type WorldState = Readonly<{ targetId: string | null; location?: WorldLocation; proceduralModel?: Readonly<{id:string;title:string;pointCount:number;parts?: readonly {id:string;label:string}[]}>; tier: ScaleTier; perspective: WorldPerspective; busy: boolean; genesis: GenesisState; layers: Readonly<Record<WorldLayer, boolean>> }>;
 export type WorldCommandResult = Readonly<{ ok: boolean; command: WorldCommand; reason?: string }>;
 export type WorldTarget = Readonly<{ id: string; label: string; lat: number; lon: number; tier: ScaleTier; detail: string }>;
 export const WORLD_TARGETS: readonly WorldTarget[] = Object.freeze(([
@@ -27,7 +31,14 @@ export const WORLD_TARGETS: readonly WorldTarget[] = Object.freeze(([
 export function validateWorldCommand(input: unknown): WorldCommand | null {
   if (!input || typeof input !== 'object' || Array.isArray(input)) return null;
   const c=input as Record<string,unknown>;
+  if(c.type==='cancelWorldTurn')return {type:'cancelWorldTurn'};
   if(c.type==='clearProceduralModel')return {type:'clearProceduralModel'};
+  if(c.type==='focusModelPart')return c.id===null||typeof c.id==='string'&&c.id.length<=40?{type:'focusModelPart',id:c.id as string|null}:null;
+  if(c.type==='showLibraryModel') {
+    try {const recipe=validateLibraryModel(c.recipe);if(c.anchor===undefined)return {type:'showLibraryModel',recipe};
+    const anchor=validateWorldCommand({...c.anchor as Record<string,unknown>,type:'flyToLocation'});
+    return anchor?.type==='flyToLocation'?{type:'showLibraryModel',recipe,anchor:{name:anchor.name,latitude:anchor.latitude,longitude:anchor.longitude,span:anchor.span}}:null;}catch{return null;}
+  }
   if(c.type==='showProceduralModel') {
     try {
       const recipe=validateProceduralModelRecipe(c.recipe);
