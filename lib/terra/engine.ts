@@ -45,7 +45,7 @@ export async function createEarth(host:HTMLDivElement,markers:HTMLDivElement,cal
  let remembering=false,settledAt:number|null=null,arrivalSent=false,stillFrames=0,graphicsLost=false;
  let viewMode:EarthView='globe',region:StudyRegion='indonesia',tilt=0,targetTilt=0,cut=0,depth=1;
  let genesisProgress=matchMedia('(prefers-reduced-motion: reduce)').matches?1:0,genesisStarted=0,lastGenesis=-Infinity,particleOffset=0;
- let targetId:string|null=null,scaleTier:ScaleTier='planet';const layerFlags:Record<WorldLayer,boolean>={satellites:true,aircraft:true,ships:false,urban:true};
+ let loadingDetail=false;let targetId:string|null=null,scaleTier:ScaleTier='planet';const layerFlags:Record<WorldLayer,boolean>={satellites:true,aircraft:true,ships:false,urban:true};
  const idleWaiters:Array<(active:boolean)=>void>=[];let commandChain:Promise<unknown>=Promise.resolve();
  let openProgress=0,openTarget=false,lastTransformation=-Infinity,personalSettledAt:number|null=null,personalArrivalSent=false;
  const openFrame=new THREE.Matrix3();openingFrame(lon,lat,openFrame);
@@ -168,12 +168,12 @@ export async function createEarth(host:HTMLDivElement,markers:HTMLDivElement,cal
    if(!places){personalEarth=[];personalStars=[];for(let i=0;i<3;i++)placePersonalLabel(i,false);}
  }
 
- function isBusy(){return genesisProgress<1||!!flight||!!morph;}
+ function isBusy(){return genesisProgress<1||!!flight||!!morph||loadingDetail;}
  function worldState():WorldState{return {targetId,tier:scaleTier,busy:isBusy(),genesis:genesisState(genesisProgress),layers:{...layerFlags}};}
  function notifyWorld(){callbacks.worldState?.(worldState());}
  function notifyGenesis(force=false){const now=performance.now();if(!force&&now-lastGenesis<120)return;lastGenesis=now;callbacks.genesis?.(genesisState(genesisProgress));notifyWorld();}
  function skipGenesis(){if(genesisProgress>=1)return;genesisProgress=1;stillFrames=0;notifyGenesis(true);}
- function replayGenesis(){if(disposed)return;flight=null;morph=null;clearStory();remembering=false;openProgress=0;openTarget=false;resetView();targetId=null;scaleTier='planet';lat=targetLat=19;lon=targetLon=95;alt=targetAlt=homeAltitude();genesisProgress=options.motion?0:1;genesisStarted=performance.now();stillFrames=0;setStage('orbit');notifyTransformation(true);notifyGenesis(true);}
+ function replayGenesis(){if(disposed||loadingDetail)return;flight=null;morph=null;clearStory();remembering=false;openProgress=0;openTarget=false;resetView();targetId=null;scaleTier='planet';lat=targetLat=19;lon=targetLon=95;alt=targetAlt=homeAltitude();genesisProgress=options.motion?0:1;genesisStarted=performance.now();stillFrames=0;setStage('orbit');notifyTransformation(true);notifyGenesis(true);}
  function waitIdle(){return disposed?Promise.resolve(false):!isBusy()?Promise.resolve(true):new Promise<boolean>(resolve=>idleWaiters.push(resolve));}
  async function executeCommand(cmd:WorldCommand):Promise<WorldCommandResult>{
   if(!await waitIdle())return {ok:false,command:cmd,reason:'World is unavailable'};
@@ -183,15 +183,16 @@ export async function createEarth(host:HTMLDivElement,markers:HTMLDivElement,cal
   if((cmd.type==='flyTo'||cmd.type==='highlightTarget')&&!target)return {ok:false,command:cmd,reason:'Unknown target'};
   if(cmd.type==='highlightTarget'){highlight(cmd.targetId);targetId=cmd.targetId;stillFrames=0;notifyWorld();return {ok:true,command:cmd};}
   const tier:ScaleTier=cmd.type==='resetView'?'planet':cmd.type==='setScale'?cmd.tier:target!.tier;
+  if(target?.id==='challenger-deep'&&(tier==='city'||tier==='street'))return {ok:false,command:cmd,reason:'Challenger Deep supports planet and regional relief views'};
   if(tier!=='planet'&&!target)return {ok:false,command:cmd,reason:'Choose a target before descending'};
   try{
-   if(target?.id==='singapore'&&(tier==='city'||tier==='street'))await ensureCity();if(target?.id==='new-york'&&(tier==='city'||tier==='street'))await ensureNewYork();
+   if(tier==='city'||tier==='street'){loadingDetail=true;notifyWorld();try{if(target?.id==='singapore')await ensureCity();if(target?.id==='new-york')await ensureNewYork();}finally{loadingDetail=false;}}
    if(disposed)return {ok:false,command:cmd,reason:'World is unavailable'};
    clearStory();remembering=false;remembered=null;arrivalSent=true;settledAt=null;targetId=cmd.type==='resetView'?null:target?.id??null;scaleTier=tier;highlight(targetId);
    const destinationAlt=tier==='planet'?homeAltitude():tier==='region'?.20:tier==='city'?.0018:.00075;
    fly(target?.lat??19,target?.lon??95,destinationAlt,tier==='city'||tier==='street'?'city':'orbit');if(flight)flight.viaPlanet=alt<.025&&destinationAlt<.025&&Math.hypot(target!.lat-lat,wrap(target!.lon-lon))>8;notifyWorld();
    if(!await waitIdle())return {ok:false,command:cmd,reason:'World is unavailable'};notifyWorld();return {ok:true,command:cmd};
-  }catch{return {ok:false,command:cmd,reason:'Target detail could not load; Earth remains available'};}
+  }catch{loadingDetail=false;stillFrames=0;notifyWorld();return {ok:false,command:cmd,reason:'Target detail could not load; Earth remains available'};}
  }
  function command(input:WorldCommand):Promise<WorldCommandResult>{const cmd=validateWorldCommand(input);if(!cmd)return Promise.resolve({ok:false,command:input,reason:'Invalid world command'});const result=commandChain.then(()=>executeCommand(cmd));commandChain=result.catch(()=>undefined);return result;}
  const pointer=new Map<number,{x:number;y:number}>();let dragged=false,initial={x:0,y:0},pinch=0;
@@ -216,7 +217,7 @@ export async function createEarth(host:HTMLDivElement,markers:HTMLDivElement,cal
  const north=new THREE.Vector3();
  function frame(now:number){if(disposed||graphicsLost||document.hidden)return;if(!options.motion&&stillFrames>2&&!flight&&!morph&&genesisProgress>=1&&personalSettledAt===null){raf=requestAnimationFrame(frame);return;}if(fallback&&now-lastTime<50){raf=requestAnimationFrame(frame);return;}const dt=Math.min((now-lastTime)/1000,.06);lastTime=now;if(options.motion)time+=dt;frameCount++;stillFrames++;
  if(flight){const t=flight.duration?clamp((now-flight.start)/flight.duration,0,1):1;const p=flight.viaPlanet?{altitude:t<.35?Math.exp(THREE.MathUtils.lerp(Math.log(flight.fromAlt),Math.log(1.1),transformationEase(t/.35))):t>.53?Math.exp(THREE.MathUtils.lerp(Math.log(1.1),Math.log(flight.toAlt),transformationEase((t-.53)/.47))):1.1,turn:transformationEase((t-.27)/.35)}:flightProgress(t,flight.fromAlt,flight.toAlt,flight.end==='orbit',host.clientWidth/host.clientHeight);const recall=flight.end==='orbit'?recallFocus(t):0;const fromLat=THREE.MathUtils.lerp(flight.fromLat,flight.anchorLat,recall),fromLon=THREE.MathUtils.lerp(flight.fromLon,flight.anchorLon,recall);lat=THREE.MathUtils.lerp(fromLat,flight.toLat,p.turn);lon=THREE.MathUtils.lerp(fromLon,flight.toLon,p.turn);alt=p.altitude;if(t>=1){targetLat=lat;targetLon=lon;targetAlt=alt;const end=flight.end;flight=null;if(end==='orbit')settledAt=now;setStage(end);}}
- else{if(stage==='orbit'&&viewMode==='globe'&&!morph&&genesisProgress>=1&&openProgress===0&&!personalPlaces&&(!remembering||settledAt!==null&&now-settledAt>6500)&&options.motion&&pointer.size===0&&now-lastInteraction>4000)targetLon+=dt*.65;const smooth=options.motion?1-Math.exp(-dt*5):1;lat=THREE.MathUtils.lerp(lat,targetLat,smooth);lon=THREE.MathUtils.lerp(lon,targetLon,smooth);alt=THREE.MathUtils.lerp(alt,targetAlt,smooth);}
+ else{if(stage==='orbit'&&viewMode==='globe'&&!morph&&genesisProgress>=1&&openProgress===0&&!personalPlaces&&!targetId&&(!remembering||settledAt!==null&&now-settledAt>6500)&&options.motion&&pointer.size===0&&now-lastInteraction>4000)targetLon+=dt*.65;const smooth=options.motion?1-Math.exp(-dt*5):1;lat=THREE.MathUtils.lerp(lat,targetLat,smooth);lon=THREE.MathUtils.lerp(lon,targetLon,smooth);alt=THREE.MathUtils.lerp(alt,targetAlt,smooth);}
  if(morph){
    const elapsed=options.motion?Math.max(0,(now-morph.start-morph.prelude)/morph.duration):1;const t=clamp(elapsed,0,1);
    openProgress=THREE.MathUtils.lerp(morph.from,morph.to,t);
@@ -248,9 +249,9 @@ export async function createEarth(host:HTMLDivElement,markers:HTMLDivElement,cal
  if(memoryCloud){memoryCloud.material.uniforms.opacity.value=remembering?memory.glimmer*1.5:0;memoryCloud.material.uniforms.sizeScale.value=memory.size;}
  if(storyLines){(storyLines.material as THREE.LineBasicMaterial).opacity=(remembering?memory.places:levels.people)*.75;storyLines.visible=!!selected||remembering;const count=storyLines.geometry.getAttribute('position').count;storyLines.geometry.setDrawRange(0,2*Math.floor(count/2*(remembering?1:reveal.links)));}
  if(personalCloud){
-   personalCloud.material.uniforms.opacity.value=stage==='orbit'?1.65:0;personalCloud.material.uniforms.sizeScale.value=1+opened*.16;
+   personalCloud.material.uniforms.opacity.value=stage==='orbit'?1.65*born.settled:0;personalCloud.material.uniforms.sizeScale.value=1+opened*.16;
    for(let i=0;i<3;i++)personalProjected[i].copy(personalEarth[i]).lerp(personalStars[i],opened);
-   if(personalLines){personalLines.visible=stage==='orbit';const a=personalLines.geometry.getAttribute('position') as THREE.BufferAttribute;const values=a.array as Float32Array;for(let i=0;i<values.length;i++)values[i]=personalLineEarth[i]+(personalLineAstra[i]-personalLineEarth[i])*opened;a.needsUpdate=true;(personalLines.material as THREE.LineBasicMaterial).opacity=.25+opened*.30;}
+   if(personalLines){personalLines.visible=stage==='orbit'&&genesisProgress>.96;const a=personalLines.geometry.getAttribute('position') as THREE.BufferAttribute;const values=a.array as Float32Array;for(let i=0;i<values.length;i++)values[i]=personalLineEarth[i]+(personalLineAstra[i]-personalLineEarth[i])*opened;a.needsUpdate=true;(personalLines.material as THREE.LineBasicMaterial).opacity=.25+opened*.30;}
  }
  for(const c of clouds){const u=c.material.uniforms;u.genesis.value=genesisProgress;u.genesisEnabled.value=c.points.userData.spatial?1:0;u.genesisExposure.value=born.exposure;u.genesisSize.value=born.size;u.opening.value=c.points.userData.spatial||c===personalCloud?openProgress:0;c.points.visible=u.opacity.value>.001&&(c!==storyCloud||!!selected||remembering);u.depthMix.value=depth;u.cutaway.value=cut;u.cameraDistance.value=camera.position.length();u.time.value=time;u.motion.value=options.motion?1:0;u.glow.value=options.glow;u.sparkle.value=options.shimmer*(c===background?.25:c===land?.8:1);u.zoomFactor.value=c===background?1:Math.min(1.45,Math.pow(2.1/Math.max(alt,.3),.14))*(mobile?1-global*.4:1);if(c===land)c.points.geometry.setDrawRange(0,Math.floor(c.count*options.density));}
  if(personalSettledAt!==null&&!personalArrivalSent&&!morph&&stage==='orbit'&&(!options.motion||now-personalSettledAt>=1100)&&Math.abs(alt-targetAlt)<.035){personalArrivalSent=true;personalSettledAt=null;callbacks.personalSettled?.();}

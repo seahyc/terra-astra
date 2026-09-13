@@ -70,6 +70,7 @@ await complete({type:'focusLayer',layer:'urban',enabled:false});tick();assert.ok
 await complete({type:'flyTo',targetId:'singapore'});assert.equal(engine.worldState().targetId,'singapore');assert.equal(stages.at(-1),'city');assert.ok(ny.every(o=>!o.visible));assert.ok(objects().filter(o=>o.userData.urban==='singapore').every(o=>o.visible));
 engine.select('amina');tick();engine.orbit();tick();assert.equal(stages.at(-1),'orbit');
 await complete({type:'flyTo',targetId:'challenger-deep'});assert.equal(engine.worldState().tier,'region');assert.equal(engine.worldState().targetId,'challenger-deep');assert.ok(rendered.camera.position.length()>1.19);
+assert.equal((await complete({type:'setScale',tier:'street'})).ok,false,'Unsupported trench street scale rejected');assert.equal(engine.worldState().tier,'region');
 await complete({type:'resetView'});assert.equal(engine.worldState().targetId,null);assert.equal(engine.worldState().tier,'planet');
 assert.equal((await complete({type:'flyTo',targetId:'missing'})).ok,false);
 engine.dispose();assert.equal(frame,null);
