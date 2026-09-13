@@ -26,3 +26,24 @@ All five exact questions returned the expected answer and map/model controls. Q1
 - New York streets: full explanation, street geometry diagram, planned blocks/older pattern/diagonal avenue model controls; Manhattan grid model ready.
 
 No repeat 429 was observed. Confirmed remaining polish addressed by v0.8.5: production integration CSS omitted by tree shaking, large pending-image frame, and raw source URLs in prose/narration. The semantic conversation/article split is included from the parallel user-requested repair. Post-deployment acceptance remains separate from these observations.
+
+
+## Public v0.8.5 final acceptance
+
+Published source/tag: `a5a5ff30e7ec8dcc22bdd298d0ca490dd9d555ed` / `v0.8.5`; native deployment succeeded at 15:39:05 SGT. The primary coordinator completed all five exact typed questions in one uninterrupted, authenticated Chrome tab after the independent QA task's browser connection failed. No physical microphone/audio audition was performed in this run.
+
+| Ordered question | Final observed result | Question to answer | Model ready |
+| --- | --- | --- | --- |
+| Angkor Wat | Complete paragraph; temple, moat, causeway, galleries, terraces and five towers. | 6.1s | 13.2s |
+| US data centers | National location overview; Northern Virginia, Dallas–Fort Worth, Phoenix and Atlanta controls; no stale Cambodia model. Generated market-pattern graphic completed. | 13.3s | Map turn 20.2s |
+| Java Trench | Surveyed 7,187 ±13m maximum explicitly separated from 5,361m transect; elevation model and generated comparison graphic completed. | 7.2s | 10.0s |
+| Singapore ports | Pasir Panjang/Tuas, quay cranes, yard stacks, automated guided vehicles, transshipment and truck distribution; descriptive PSA/MOT links, no bare URLs in article or transcript. | 13.2s | 12.3s |
+| New York street geometry | Full paragraph explaining Manhattan grid and older/borough patterns; planned blocks, older street pattern and diagonal avenue model controls. | 3.6s | 11.0s |
+
+Timing is local exported telemetry for this single run, not a general latency benchmark. The report contains 52 metadata events across exactly five completed turns, zero evictions, successful answer HTTP responses, successful navigation commands, and no recorded error/retry events. Browser console warning/error capture was empty. Two generated image requests completed successfully; four prepared models were cached. These ordinary questions selected quick/standard answer routes with zero newly delegated subagents; this run does not establish native Agents API delegation or voice playback.
+
+Actual final-view checks:
+- Desktop 1500×894: answer bottom 637.99px, dock top 674.17px, 36.18px clearance. Opening computed display is `none`.
+- Phone viewport 390×844: answer bottom 537.99px, dock top 600px, 62.01px clearance; input bottom 820px within viewport; no horizontal page overflow. Answer area scrolls (268px client / 637px content). Native screenshots show the starlight model above the editorial card and separate transcript below.
+- Temporary phone override was reset to the original 1500×894; the coordinator's temporary QA tabs were closed. User tabs were preserved.
+- Debug report downloaded through the visible Diagnostics → Export debug report control. It contains build/timing/route/navigation/error metadata, excluding conversation text, coordinates, URLs, audio and credentials. The local artifact remains outside the repository.
