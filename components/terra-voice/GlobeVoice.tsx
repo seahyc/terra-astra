@@ -98,8 +98,6 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
   const [modelStatus, setModelStatus] = useState<{ title: string; phase: 'building' | 'ready' | 'error'; persisted?: boolean; measured?: boolean } | null>(null);
   const [navigationState, setNavigationState] = useState<WorldState | null>(() => getWorldState());
   const [transcriptBaseline, setTranscriptBaseline] = useState({ userIndex: -1, userText: '' });
-  const [libraryEntries,setLibraryEntries]=useState<Array<{id:string;title:string;question?:string}>>([]);
-  useEffect(()=>{const controller=new AbortController();void fetch('/api/terra/models',{signal:controller.signal}).then(r=>r.json()).then(body=>setLibraryEntries(z.object({models:z.array(z.object({id:z.string(),title:z.string(),question:z.string().optional()}))}).parse(body).models)).catch(()=>{});return()=>controller.abort();},[busy]);
   const live = useRef<ReturnType<typeof createLiveController> | null>(null);
   const active = useRef<AbortController | null>(null), revision = useRef(0);
   const activeTurnRef = useRef<string | null>(null);
@@ -375,7 +373,6 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
     {busy && !answer && <div className={styles.editorialLoading} role="status"><span/><span/><span/><small>{progress || 'Thinking'}</small></div>}
     {editorialAnswer.lead && <div className={styles.editorialCopy}>{answerWithLinks(editorialAnswer.lead)}</div>}
     {answerImage && <AnswerImage title={answerImage.title} imageUrl={answerImage.imageUrl} loading={answerImage.loading} error={answerImage.error}/>}
-    {libraryEntries.length>0 && <label className={styles.library}>Model library <select aria-label="Model library" value="" onChange={event=>{const entry=libraryEntries.find(e=>e.id===event.target.value);if(entry)void ask(entry.question??`Explain ${entry.title}`,undefined,entry.id);}}><option value="">Choose a model…</option>{libraryEntries.map(entry=><option key={entry.id} value={entry.id}>{entry.title}</option>)}</select></label>}
     {navigationState?.proceduralModel?.parts && <div className={styles.parts} aria-label="Model parts">{navigationState.proceduralModel.parts.map(part=><button key={part.id} type="button" onClick={()=>void sendWorldCommand({type:'focusModelPart',id:part.id})}>{part.label}</button>)}<button type="button" onClick={()=>void sendWorldCommand({type:'focusModelPart',id:null})}>All parts</button></div>}
     {modelStatus && <p className={styles.modelStatus} role="status">{modelStatus.phase === 'building' ? `Shaping ${modelStatus.title}…` : modelStatus.phase === 'ready' ? `${modelStatus.title} is now on the globe.${modelStatus.persisted === false ? ' Library saving is unavailable for this model.' : ''}` : `The ${modelStatus.title} model was unavailable.`}</p>}
     {modelStatus?.phase==='ready' && <details className={styles.modelEvidence}><summary>About this model</summary><p>{modelStatus.measured?'121 checked-in NOAA ETOPO samples along 112.922°E. Horizontal distance: km; elevation: m. Highest sample +984 m, lowest −5,361 m. These are transect samples, not summit or deepest-trench measurements; axes are scaled independently.':'Conceptual geometry with validated shapes and bounds. Dimensions and motion explain the subject; they are not surveyed measurements or independent factual verification.'}</p></details>}
