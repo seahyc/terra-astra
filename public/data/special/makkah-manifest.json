@@ -1,0 +1,91 @@
+{
+  "destination": "makkah",
+  "source": "OpenStreetMap contributors / Overpass API",
+  "license": "ODbL 1.0",
+  "attribution": "https://www.openstreetmap.org/copyright",
+  "snapshot": "2026-09-13T05:47:50Z",
+  "sourceSha256": "2c6efec46ff13933af814d0a29d4da2790fe0b1faf695f8cbbbb0d0802c420aa",
+  "preparation": "scripts/prepare-special-destinations.py; seed 260913; no elevations or building volumes inferred",
+  "activity": "Procedural only. No live vehicle, boat or human observations.",
+  "features": {
+    "coast": 0,
+    "road": 2398,
+    "building": 1320,
+    "mosque": 30
+  },
+  "files": {
+    "stars": {
+      "file": "makkah-stars.bin",
+      "bytes": 847656,
+      "records": 35319,
+      "sha256": "d4c18573163e44ae022937285413b86991e171c009f90ddfd46cbf1cb570db66"
+    },
+    "streets": {
+      "file": "makkah-streets.bin",
+      "bytes": 275784,
+      "records": 11491,
+      "sha256": "cb853f97b2f43e84345dc385c5b3509f0c3268ce55275b5e80a6c5789f399966"
+    },
+    "coast": {
+      "file": "makkah-coast.bin",
+      "bytes": 56328,
+      "records": 2347,
+      "sha256": "b18e686679c78904288fb78f1a4a493767fb0bc1c2b4ce8349c41deeab24aefe"
+    },
+    "outline": {
+      "file": "makkah-outline.bin",
+      "bytes": 13128,
+      "records": 547,
+      "sha256": "a5d238fcf19503d49692411196a97dc0580279a6ca610423c6dff55ae8ee37ae"
+    }
+  },
+  "sourceSnapshots": [
+    {
+      "file": "makkah-osm.json",
+      "sha256": "3b3d16d3b8523c938ebbcde3e66ccf22105ed1a4b8cf735fc791ed4b08e3d14c",
+      "timestamp": "2026-09-13T05:47:50Z"
+    },
+    {
+      "file": "makkah-mosque-osm.json",
+      "sha256": "63755729e7ea68cd6c5ec0af8343131ea3a1ef60daa65754269baf71a99ec647",
+      "timestamp": "2026-09-13T05:48:51Z"
+    }
+  ],
+  "focalGeometry": {
+    "source": "OpenStreetMap way 103914569",
+    "sourceUrl": "https://www.openstreetmap.org/way/103914569",
+    "footprint": [
+      [
+        39.8261095,
+        21.4225371
+      ],
+      [
+        39.8261922,
+        21.4225861
+      ],
+      [
+        39.8262411,
+        21.4225173
+      ],
+      [
+        39.8262546,
+        21.4224985
+      ],
+      [
+        39.8261735,
+        21.4224468
+      ],
+      [
+        39.8261095,
+        21.4225371
+      ]
+    ],
+    "center": [
+      39.82619418,
+      21.42251716
+    ],
+    "heightMetres": 15.0,
+    "heightSource": "OSM height tag; no architectural survey claim",
+    "mosqueRelation": "https://www.openstreetmap.org/relation/1472531"
+  }
+}
