@@ -2,6 +2,11 @@
 
 Semantic versions label the experience; Sites version numbers identify saved deployment packages. They are separate counters. `lib/terra/releases.ts` is the source for the public history page and current build badge. Git tags identify exact source snapshots; native Sites records are authoritative for save/deploy status.
 
+## v0.7.1 — 2026-09-13 — Stay with the place you chose
+- Fixes an inherited primary action that still offered Singapore while viewing New York region or Challenger Deep.
+- Uses the existing WorldCommand scale path: New York regional view enters New York city; Challenger Deep returns to planet. The opening still offers Singapore.
+- Renderer, geometry and all v0.7 richness are unchanged. v0.7 remains preserved as source tag and Sites version 10, published at 14:01 SGT.
+
 ## v0.7 — 2026-09-13 — A wider, more responsive world
 - Run 1 authority: Richness + Responsiveness v4. Preserves v0.6.1 history and the existing renderer, Genesis and YC WorldCommand API.
 - Starts camera motion before cold city loading, prepares Singapore and New York after Genesis, retains prepared geometry, and reduces same-target scale travel from 6,800 to 1,100ms while preserving serialized completion results.

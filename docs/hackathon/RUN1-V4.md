@@ -34,3 +34,10 @@ Cuts: sophisticated cable sources, live providers, advanced new terrain/ocean-cu
 Integration risk: YC public WorldCommand contract remains unchanged, but no current YC Live conversation implementation is present on the inspected remote branches. Existing 90-second video documents v0.6; recording the final integrated build belongs to the next polish/recording window. GitHub repository remains private pending judge-access arrangements.
 
 Publication SHA, tag and saved-version evidence are appended after terminal deployment verification.
+
+
+## Run 1 navigation correction
+
+Native review found the inherited primary button always offered Singapore, including from New York region. v0.7.1 routes that button through the existing WorldCommand path: New York region → New York city (1,208ms observed); Challenger Deep → planet (1,191ms), then the opening Singapore action is available. This changes no renderer or public command contract. Challenger's angled seafloor remains visible; its heavier regional view observed about 96–97fps rather than the 120fps SG/NY samples.
+
+v0.7 source d755cf146035319c464b6cb8a7ff7cf9b9036453 is preserved as an annotated tag and Sites version 10. Deployment appgdep_6aa63c1266bc8191a28f76f410a03ffb succeeded at 14:01:04 SGT. v0.7.1 is a subsequent bounded correction, not a moved tag.

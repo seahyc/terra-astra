@@ -1,13 +1,25 @@
 /** User-facing release history. Keep historical entries tied to their saved milestones. */
-export const currentVersion = '0.7';
+export const currentVersion = '0.7.1';
 
 export const releases = [
+  {
+    version: '0.7.1',
+    date: '2026-09-13',
+    dateLabel: '13 September 2026',
+    title: 'Stay with the place you chose',
+    milestone: 'This build',
+    changes: [
+      'The primary journey button follows the selected destination: regional New York returns to New York city detail, and Challenger Deep returns to the planet.',
+      'These actions use the existing world-command path and fast scale transitions. Singapore remains the opening destination.',
+    ],
+    review: 'Native Mac review confirms New York regional re-entry stays in New York (1.21 seconds), and Challenger Deep returns to planet (1.19 seconds) with Singapore available again. The v0.7 rendering, geography and keyboard controls are unchanged. YC Live conversation remains a separate integration.',
+  },
   {
     version: '0.7',
     date: '2026-09-13',
     dateLabel: '13 September 2026',
     title: 'A wider, more responsive world',
-    milestone: 'This build',
+    milestone: 'Previous release',
     changes: [
       'Repeated scale changes now travel in 1.1 seconds. Singapore and New York detail prepares after Genesis, and cold journeys begin moving before detail arrives.',
       '72 orbital lights, 120 aircraft and 24 ships occupy distinct heights and routes. Faint violet undersea connections and two distant star shells extend the world around Earth.',
