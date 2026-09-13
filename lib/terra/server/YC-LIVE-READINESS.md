@@ -17,6 +17,6 @@ Endpoints use same-origin `/api/terra`:
 - POST `/agents/cancel` cancels only the authenticated visitor's active answer.
 - Image/model generation and extended multi-agent research are not included in this minimal voice integration. They must not be advertised as available.
 
-The supplied scene inventory names only the actual supported three renderer targets and existing procedural layer counts. No runtime claim of tracked vehicles or people is made.
+The supplied scene inventory names only the actual supported five renderer targets and existing procedural layer counts. No runtime claim of tracked vehicles or people is made.
 
 Validation: six inherited HTTP handler tests and full TypeScript pass. Tests cover anonymous status/auth gates, origin/body/query/rate checks, NDJSON output, session response credential stripping and user-scoped cancellation. These are mocked transport tests, not proof that a deployed secret, real Live session or microphone audio works. Integrator must verify deployed `/status`, sign-in, actual session creation and a spoken navigation action before claiming Live completion.
