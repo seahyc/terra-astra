@@ -64,7 +64,7 @@ export default function TerraExperience(){
   </div>:null}
   {stage==='orbit'&&!astra&&showDepth?<DepthControls view={view} region={region} depth={options.depth} disabled={!ready||loadingCity} onView={mode=>engine.current?.view(mode)} onRegion={id=>{setRegion(id);engine.current?.region(id);}} onDepth={depth=>configure({depth})}/>:null}
   {astra?<section className={`personal-panel${editingPersonal?' personal-panel-editing':''}`} aria-label="Your personal constellation">
-   {editingPersonal?<><div className="personal-panel-heading"><h2>Three places.<br/><em>One life. Yours.</em></h2><button className="personal-close" onClick={()=>setEditingPersonal(false)} aria-label="Close place chooser"><X size={18}/></button></div><PersonalConstellationForm initialValue={personalPlaces} disabled={transformation.busy} onSubmit={submitPersonal} onReset={()=>{}}/></>:personalPlaces?<>
+   {editingPersonal?<><div className="personal-panel-heading"><button className="personal-close" onClick={()=>setEditingPersonal(false)} aria-label="Close place chooser"><X size={18}/></button></div><PersonalConstellationForm initialValue={personalPlaces} disabled={transformation.busy} onSubmit={submitPersonal} onReset={()=>{}}/></>:personalPlaces?<>
     <h2>Your<br/><em>constellation.</em></h2>
     <ol className="personal-place-list">{personalPlaces.map((p,i)=><li key={p.id}><span className="personal-star-number">{i+1}</span><div><strong>{p.label}</strong><p>{p.meaning}</p></div></li>)}</ol>
     <button className="journey-button" disabled={transformation.busy} onClick={reformEarth}>Return to Earth <ArrowUp size={18}/></button>
