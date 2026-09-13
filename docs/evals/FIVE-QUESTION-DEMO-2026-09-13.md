@@ -35,12 +35,12 @@ Published source/tag: `a5a5ff30e7ec8dcc22bdd298d0ca490dd9d555ed` / `v0.8.5`; nat
 | Ordered question | Final observed result | Question to answer | Model ready |
 | --- | --- | --- | --- |
 | Angkor Wat | Complete paragraph; temple, moat, causeway, galleries, terraces and five towers. | 6.1s | 13.2s |
-| US data centers | National location overview; Northern Virginia, Dallas–Fort Worth, Phoenix and Atlanta controls; no stale Cambodia model. Generated market-pattern graphic completed. | 13.3s | Map turn 20.2s |
+| US data centers | National location overview; Northern Virginia, Dallas–Fort Worth, Phoenix and Atlanta controls; no stale Cambodia model. Generated market-pattern graphic completed. | 13.7s | Map turn 20.6s |
 | Java Trench | Surveyed 7,187 ±13m maximum explicitly separated from 5,361m transect; elevation model and generated comparison graphic completed. | 7.2s | 10.0s |
 | Singapore ports | Pasir Panjang/Tuas, quay cranes, yard stacks, automated guided vehicles, transshipment and truck distribution; descriptive PSA/MOT links, no bare URLs in article or transcript. | 13.2s | 12.3s |
 | New York street geometry | Full paragraph explaining Manhattan grid and older/borough patterns; planned blocks, older street pattern and diagonal avenue model controls. | 3.6s | 11.0s |
 
-Timing is local exported telemetry for this single run, not a general latency benchmark. The report contains 52 metadata events across exactly five completed turns, zero evictions, successful answer HTTP responses, successful navigation commands, and no recorded error/retry events. Browser console warning/error capture was empty. Two generated image requests completed successfully; four prepared models were cached. These ordinary questions selected quick/standard answer routes with zero newly delegated subagents; this run does not establish native Agents API delegation or voice playback.
+Timing uses monotonic elapsed-time differences from local exported telemetry for this single run, not a general latency benchmark. The wall clock moved backward during the second question; monotonic timing avoids understating that response. The report contains 52 metadata events across exactly five completed turns, zero evictions, successful answer HTTP responses, successful navigation commands, and no recorded error/retry events. Browser console warning/error capture was empty. Two generated image requests completed successfully; four prepared models were cached. These ordinary questions selected quick/standard answer routes with zero newly delegated subagents; this run does not establish native Agents API delegation or voice playback.
 
 Actual final-view checks:
 - Desktop 1500×894: answer bottom 637.99px, dock top 674.17px, 36.18px clearance. Opening computed display is `none`.
