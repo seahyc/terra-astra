@@ -1,13 +1,27 @@
 /** User-facing release history. Keep historical entries tied to their saved milestones. */
-export const currentVersion = '0.4';
+export const currentVersion = '0.4.1';
 
 export const releases = [
+  {
+    version: '0.4.1',
+    date: '2026-09-13',
+    dateLabel: '13 September 2026',
+    title: 'A journey you can return to',
+    milestone: 'This build',
+    changes: [
+      'Restart journey returns to the opening Earth with fresh camera, light and story settings.',
+      'The home globe fits the desktop composition and adjusts when the window changes size.',
+      'Switching between lives preserves the space above the story panel on narrow screens.',
+      'A graphics interruption now offers a clear restart instead of dismissing a frozen view.',
+    ],
+    review: 'Reviewed in native WebGL on a Mac browser, including paused depth views, Singapore, all three lives at phone width, and remembered return. Geography, camera, lifecycle and build checks pass. Phone-width browser review is not physical-phone testing. This sprint continues the pre-existing v0.4 prototype; runtime Astra inference is not part of this release.',
+  },
   {
     version: '0.4',
     date: '2026-09-12',
     dateLabel: '12 September 2026',
     title: 'A world with depth',
-    milestone: 'This build',
+    milestone: 'Previous release',
     changes: [
       'Real land elevation and ocean-floor relief shape the stars, with exaggerated height to reveal mountains, shelves and trenches.',
       'Layers of stellar matter, soft light and quiet cavities give the world an interior.',

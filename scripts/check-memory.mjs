@@ -12,7 +12,7 @@ registerHooks({ resolve(specifier, context, next) {
   if (context.parentURL?.startsWith(root) && specifier.startsWith('.') && !specifier.endsWith('.ts')) return next(specifier + '.ts', context);
   return next(specifier, context);
 } });
-let clock = 0, frame = null;
+let clock = 0, frame = null, resizeCallback = null;
 const noop = () => {};
 const ctx = new Proxy({ createRadialGradient: () => ({ addColorStop: noop }) }, { get: (o, key) => o[key] ?? noop, set: (o, key, value) => { o[key] = value; return true; } });
 class Canvas {
@@ -23,7 +23,7 @@ class Canvas {
 globalThis.document = { hidden: false, createElement: () => new Canvas(), createElementNS: () => new Canvas(), addEventListener: noop, removeEventListener: noop };
 globalThis.window = { devicePixelRatio: 1, innerWidth: 1363 };
 globalThis.matchMedia = () => ({ matches: false });
-globalThis.ResizeObserver = class { observe() {} disconnect() {} };
+globalThis.ResizeObserver = class { constructor(callback) { resizeCallback = callback; } observe() {} disconnect() {} };
 globalThis.Path2D = class { moveTo() {} lineTo() {} };
 globalThis.requestAnimationFrame = callback => { frame = callback; return 1; };
 globalThis.cancelAnimationFrame = () => { frame = null; };
@@ -94,6 +94,23 @@ await engine.descend();tick();engine.select('amina');tick();engine.select('mei')
 assert.equal(arrivals.at(-1), 'mei', 'The most recently visited life must win');
 await engine.descend();tick();engine.orbit();tick();
 assert.equal(arrivals.at(-1), null, 'Starting a new journey must clear memory');
+// A new story must retain phone fitting even when its panel has the same height.
+host.clientWidth = 390; host.clientHeight = 844;
+resizeCallback();tick();
+const phoneAltitude = rendered.camera.position.length() - 1;
+assert.ok(phoneAltitude > 5, 'Resizing home to a phone must refit the entire globe');
+host.clientWidth = 1363; host.clientHeight = 936;resizeCallback();tick();
+assert.ok(rendered.camera.position.length() - 1 < phoneAltitude, 'Returning to desktop must restore home framing');
+host.clientWidth = 390;host.clientHeight = 844;resizeCallback();tick();
+await engine.descend();tick();
+engine.select('amina');engine.storyInset(450);tick();
+engine.select('daniel');tick();
+for (const place of stories.find(s => s.id === 'daniel').places) {
+  const { geo } = await import('../lib/terra/engine.ts');
+  const point = geo(place.lon, place.lat, 1.00003).project(rendered.camera);
+  const y = (-point.y * .5 + .5) * host.clientHeight;
+  assert.ok(y > 75 && y < host.clientHeight - 450, 'Switching lives must keep every light above the unchanged phone panel');
+}
 engine.dispose();assert.equal(frame, null, 'Disposal must stop rendering');
 
 // Sparse peaks must remain sparse across the full field, even at maximum shimmer.

@@ -2,6 +2,16 @@
 
 Semantic versions label the experience; Sites version numbers identify saved deployment packages. They are separate counters. `lib/terra/releases.ts` is the source for the public history page and current build badge. Git tags identify exact source snapshots; native Sites records are authoritative for save/deploy status.
 
+## v0.4.1 — 2026-09-13 — A journey you can return to
+- Restores the existing v0.4 history into a portable Mac checkout and private shared GitHub repository; no data regeneration or renderer replacement.
+- Adds a complete Restart journey action using page reload, clearing camera, tuning, region, selected/remembered life and in-flight work.
+- Fits the home globe inside its desktop composition and recalculates home altitude when the viewport changes.
+- Reapplies story-panel fitting when switching lives at phone width, including equal-height panels.
+- Marks graphics-context loss as a fatal restartable state; a lost renderer stays stopped across visibility changes.
+- Verification: geography, choreography, lifecycle and TypeScript checks; production build. The lifecycle check now covers home resize and same-height phone story switching.
+- Native WebGL review on the Mac covered paused Globe/Horizon/Cutaway, Singapore, expanded Amina, all three lives at 390 × 844, and a remembered-light return. Physical-phone performance and induced GPU context loss remain unverified.
+- Retains the exact v0.4 tag and earlier milestones. Today's engineering changes are distinct from the pre-existing prototype. No runtime Astra inference is claimed.
+
 ## v0.4 — 2026-09-12 — A world with depth
 - Adds real NOAA ETOPO 2022 land elevation and ocean bathymetry, artistically exaggerated. Slope and elevation bands emphasize mountain profiles, shelves, ridges and trenches.
 - Adds 296,171 prepared spatial particles across land, ocean, body, interior, haze and halo layers, with screen-dependent draw budgets. Interior structures are interpretive, not geological measurements or people.
