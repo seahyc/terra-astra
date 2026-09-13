@@ -1,9 +1,18 @@
 /** User-facing release history. Keep historical entries tied to their saved milestones. */
-export const currentVersion = '0.7.1';
+export const currentVersion = '0.7.2';
 
 export const releases = [
   {
-    version: '0.7.1', date: '2026-09-13', dateLabel: '13 September 2026', title: 'Hosted answers', milestone: 'This build',
+    version: '0.7.2', date: '2026-09-13', dateLabel: '13 September 2026', title: 'Clearer answers and diagnostics', milestone: 'This build',
+    changes: [
+      'Comparison and explanation requests keep their full meaning when they also ask for a camera change. Named flights and satellites are handled as questions instead of decorative layer commands.',
+      'An optional Diagnostics panel exports a bounded report of timing, model routing, navigation and failures from this tab. Conversation text, audio, images and credentials are excluded.',
+      'Unexpected service responses now produce a readable error instead of exposing a JSON parser message.',
+    ],
+    review: 'Automated checks cover navigation intent, streamed answers, safe errors, telemetry redaction and bounded storage. Live testing of the preceding build exposed the comparison routing failure and dark regional framing. Real flight and satellite tracking, multi-place framing and physical-phone/audio testing remain separate work.',
+  },
+  {
+    version: '0.7.1', date: '2026-09-13', dateLabel: '13 September 2026', title: 'Hosted answers', milestone: 'Previous release',
     changes: ['Repairs a hosted backend startup error by separating local diagnostic files from the online answer service.'],
     review: 'The production-only error was traced from Worker logs to a local file URL in the research module. The fix preserves the answer routes and original globe.',
   },
