@@ -22,6 +22,8 @@ export type UrbanActivity = {
   /** Per-particle immutable unit-sphere endpoints, stride 6, useful for inspection. */
   readonly trafficSegments: Float32Array;
   readonly trafficDirections: Int8Array;
+  /** Geometric importance from segment length and endpoint connectivity, not road class. */
+  readonly trafficImportance: Float32Array;
   readonly trafficBrightness: Float32Array;
   readonly trafficSize: Float32Array;
   readonly activityBrightness: Float32Array;
@@ -58,12 +60,14 @@ export function createUrbanActivity(roadPositions: Float32Array, options: UrbanA
   const maximum = Number.isFinite(options.maxSegmentMetres) ? Math.max(2, Math.min(5000, options.maxSegmentMetres!)) : 1200;
   const roads: number[] = [], lengths: number[] = [], cumulative: number[] = [];
   const junctions = new Map<string, { x: number; y: number; z: number; count: number }>();
+  const roadJunctions: { count: number }[] = [];
   let totalLength = 0;
   function junction(x: number, y: number, z: number) {
     // Sub-metre quantization recovers shared OSM endpoints after Float32 storage.
     const key = `${Math.round(x * 1e7)},${Math.round(y * 1e7)},${Math.round(z * 1e7)}`;
     const existing = junctions.get(key);
-    if (existing) existing.count++; else junctions.set(key, { x, y, z, count: 1 });
+    if (existing) { existing.count++; return existing; }
+    const entry = { x, y, z, count: 1 }; junctions.set(key, entry); return entry;
   }
   for (let i = 0; i + 5 < roadPositions.length; i += 6) {
     let ax = roadPositions[i], ay = roadPositions[i + 1], az = roadPositions[i + 2];
@@ -74,14 +78,20 @@ export function createUrbanActivity(roadPositions: Float32Array, options: UrbanA
     const metres = Math.hypot(bx - ax, by - ay, bz - az) * EARTH_METRES;
     if (!(metres >= 2 && metres <= maximum)) continue;
     roads.push(ax, ay, az, bx, by, bz); lengths.push(metres);
-    totalLength += metres; cumulative.push(totalLength);
-    junction(ax, ay, az); junction(bx, by, bz);
+    roadJunctions.push(junction(ax, ay, az), junction(bx, by, bz));
+  }
+  const importance = new Float32Array(lengths.length);
+  for (let i = 0; i < lengths.length; i++) {
+    const connectivity = Math.min(1, Math.max(0, roadJunctions[i * 2].count + roadJunctions[i * 2 + 1].count - 4) / 5);
+    importance[i] = Math.min(1, .65 * Math.sqrt(Math.min(1, lengths[i] / 180)) + .35 * connectivity);
+    totalLength += lengths[i] * (.55 + importance[i] * 1.45); cumulative.push(totalLength);
   }
 
   const trafficCount = lengths.length ? budget(options.trafficCount, 600) : 0;
   const activityCount = lengths.length ? budget(options.activityCount, 500) : 0;
   const trafficSegments = new Float32Array(trafficCount * 6);
   const trafficDirections = new Int8Array(trafficCount);
+  const trafficImportance = new Float32Array(trafficCount);
   const trafficBrightness = new Float32Array(trafficCount), trafficSize = new Float32Array(trafficCount);
   const trafficOpacity = new Float32Array(trafficCount), trafficPhase = new Float64Array(trafficCount), trafficRate = new Float64Array(trafficCount);
   for (let i = 0; i < trafficCount; i++) {
@@ -89,23 +99,28 @@ export function createUrbanActivity(roadPositions: Float32Array, options: UrbanA
     const selected = choose(cumulative, hash(identity) * totalLength);
     for (let c = 0; c < 6; c++) trafficSegments[i * 6 + c] = roads[selected * 6 + c];
     trafficDirections[i] = hash(identity + 1) < .5 ? -1 : 1;
+    trafficImportance[i] = importance[selected];
     trafficPhase[i] = hash(identity + 2);
-    trafficRate[i] = (7 + hash(identity + 3) * 13) / lengths[selected];
-    trafficBrightness[i] = .5 + hash(identity + 4) * .4;
-    trafficSize[i] = .6 + hash(identity + 5) * .4;
+    trafficRate[i] = (7 + hash(identity + 3) * 8 + importance[selected] * 6) / lengths[selected];
+    trafficBrightness[i] = .40 + importance[selected] * .70 + hash(identity + 4) * .12;
+    trafficSize[i] = .52 + importance[selected] * .62 + hash(identity + 5) * .10;
   }
 
   const centers = [...junctions.values()];
   const centerWeights: number[] = [];
   let totalWeight = 0;
   for (const center of centers) { totalWeight += center.count * center.count; centerWeights.push(totalWeight); }
+  const hubs = new Uint32Array(Math.min(96, centers.length));
+  for (let i = 0; i < hubs.length; i++) hubs[i] = choose(centerWeights, hash(seed + 91391 + i * 37) * totalWeight);
   const activityAnchors = new Float32Array(activityCount * 3);
   const activityBasis = new Float32Array(activityCount * 6);
   const activityBrightness = new Float32Array(activityCount), activitySize = new Float32Array(activityCount);
   const activityPhase = new Float64Array(activityCount), activityRate = new Float64Array(activityCount), activityWander = new Float64Array(activityCount);
   for (let i = 0; i < activityCount; i++) {
     const identity = seed + 100000 + i * 23;
-    const center = centers[choose(centerWeights, hash(identity) * totalWeight)];
+    // Four nearby activities per stable hub, with a dispersed fifth. This creates
+    // a legible breathing rhythm without claiming actual observed population.
+    const center = centers[i % 5 && hubs.length ? hubs[Math.floor(i / 5) % hubs.length] : choose(centerWeights, hash(identity) * totalWeight)];
     activityAnchors.set([center.x, center.y, center.z], i * 3);
     // Longitude tangent and perpendicular tangent, stable even near the poles.
     let tx = center.z, ty = 0, tz = -center.x;
@@ -116,8 +131,8 @@ export function createUrbanActivity(roadPositions: Float32Array, options: UrbanA
     activityPhase[i] = hash(identity + 1) * TAU;
     activityRate[i] = .045 + hash(identity + 2) * .075;
     activityWander[i] = (2 + hash(identity + 3) * 7) / EARTH_METRES;
-    activityBrightness[i] = .12 + hash(identity + 4) * .2;
-    activitySize[i] = .28 + hash(identity + 5) * .25;
+    activityBrightness[i] = .12 + hash(identity + 4) * .16;
+    activitySize[i] = .28 + hash(identity + 5) * .20;
   }
 
   function sample(timeSeconds: number, trafficXYZ: Float32Array, activityXYZ: Float32Array) {
@@ -147,5 +162,5 @@ export function createUrbanActivity(roadPositions: Float32Array, options: UrbanA
       activityXYZ[anchor] = x * radius; activityXYZ[anchor + 1] = y * radius; activityXYZ[anchor + 2] = z * radius;
     }
   }
-  return { trafficCount, activityCount, validSegmentCount: lengths.length, trafficSegments, trafficDirections, trafficBrightness, trafficSize, trafficOpacity, activityAnchors, activityBrightness, activitySize, sample, update: sample };
+  return { trafficCount, activityCount, validSegmentCount: lengths.length, trafficSegments, trafficDirections, trafficImportance, trafficBrightness, trafficSize, trafficOpacity, activityAnchors, activityBrightness, activitySize, sample, update: sample };
 }
