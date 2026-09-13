@@ -2,7 +2,7 @@
 
 Semantic versions label the experience; Sites version numbers identify saved deployment packages. They are separate counters. `lib/terra/releases.ts` is the source for the public history page and current build badge. Git tags identify exact source snapshots; native Sites records are authoritative for save/deploy status.
 
-## v0.8.1 — 2026-09-13 — Ready for the journey
+## v0.9 — 2026-09-13 — Ready for the journey
 - Stop ends microphone tracks immediately; the data channel remains briefly available for final usage. A new regression verifies no false ended-track error and successful late usage delivery.
 - Disconnected sessions return to a usable Talk button; the visible status omits raw usage JSON.
 - Gently raises existing SG/NY continuation luminance (4.4→5.5; filament cap .18→.20), with no geometry, camera, layer population or destination changes.

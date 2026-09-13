@@ -1,9 +1,9 @@
 /** User-facing release history. Keep historical entries tied to their saved milestones. */
-export const currentVersion = '0.8.1';
+export const currentVersion = '0.9';
 
 export const releases = [
   {
-    version: '0.8.1',
+    version: '0.9',
     date: '2026-09-13',
     dateLabel: '13 September 2026',
     title: 'Ready for the journey',
