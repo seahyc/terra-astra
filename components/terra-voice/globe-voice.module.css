@@ -15,3 +15,5 @@
 .library{display:grid;gap:8px;margin-top:18px;color:#acb3be;font:11px Arial,sans-serif}.library select{width:100%;min-height:40px;border:1px solid #d6c8ff30;border-radius:6px;background:#0d131c;color:#e5dfd0;padding:8px}.parts{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.parts button{min-height:32px;background:#111923;border:1px solid #d6c8ff25;border-radius:5px;color:#c4becf;padding:6px 9px;font:11px Arial,sans-serif;cursor:pointer}.parts button:focus-visible,.library select:focus-visible{outline:2px solid #eee5ff;outline-offset:2px}
 
 .modelEvidence{margin-top:10px;color:#8fa5b3;font:11px/1.5 Arial,sans-serif}.modelEvidence summary{cursor:pointer;padding-block:7px}.modelEvidence p{margin:4px 0}
+
+.signInButton{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 14px;border:1px solid #e0d0ff;border-radius:10px;background:#d6c8ff;color:#171224;font:600 13px/1.2 Arial,sans-serif;text-decoration:none;cursor:pointer}.signInButton:hover{background:#e9dfff}.signInButton:focus-visible{outline:2px solid #fff;outline-offset:3px}
