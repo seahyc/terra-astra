@@ -69,6 +69,64 @@ html{color-scheme:dark}.story-sheet,.about-dialog,.tuning-dialog{scrollbar-width
 
 .map-star[data-label-side=left] .marker-label{left:auto;right:41px}
 
+/* The personal journey inherits the original dark sky and warm human light. */
+.terra-invitation{position:absolute;z-index:5;left:7vw;top:56%;display:grid;justify-items:start;gap:8px}
+.signature-button{min-width:215px;justify-content:space-between;background:#d8b77e14}
+.depth-toggle{color:#9cafbb;font-size:14px}
+.terra-invitation:has(.depth-toggle[aria-expanded=true]){top:92px;display:flex;align-items:center;gap:24px}
+.experience:has(.depth-toggle[aria-expanded=true]) .opening{opacity:0}
+.in-astra .opening,.personal-returned .opening{display:none}
+.personal-panel,.personal-ending{position:absolute;z-index:5;left:7vw;top:22%;width:min(340px,29vw);max-height:calc(100svh - 250px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:#38505e #08121a}
+.personal-panel h2,.personal-ending h1{font:400 clamp(40px,4.6vw,68px)/1.08 Georgia,'Times New Roman',serif;letter-spacing:-.035em;margin:0 0 28px;color:#e8edf0;text-wrap:balance}
+.personal-panel h2 em,.personal-ending h1 em{color:#e1cba4;font-weight:400}
+.personal-intro{font-size:16px;line-height:1.7;color:#adbdc6;margin:0 0 30px}
+.personal-panel .journey-button{white-space:normal;justify-content:space-between;width:100%;gap:16px}
+.personal-panel-heading{position:relative;padding-right:25px}
+.personal-panel-heading h2{font-size:38px;margin-bottom:24px}
+.personal-close{position:absolute;right:0;top:0;display:grid;place-items:center;width:32px;height:32px;border:0;background:none;color:#adbdc6}
+.personal-panel-editing{top:100px;max-height:calc(100svh - 225px);padding:22px;background:#061019ed;border:1px solid #6c87912e;border-radius:4px;width:min(380px,33vw)}
+.personal-place-list{margin:0 0 24px;padding:0;list-style:none}
+.personal-place-list li{display:flex;gap:15px;margin:0 0 22px;align-items:baseline}
+.personal-star-number{font:italic 17px Georgia,serif;color:#ddc395;flex:none}
+.personal-place-list strong{font-size:16px;color:#ead8b7;font-weight:400}
+.personal-place-list p{font-size:14px;line-height:1.6;color:#a8bac6;margin:4px 0 0;overflow-wrap:anywhere}
+.personal-secondary{display:flex;justify-content:space-between;gap:16px}
+.personal-secondary .text-button:last-child{color:#9cafbb}
+.personal-marker{pointer-events:none}
+.personal-marker .marker-label{font-size:14px;color:#ffe6b8;background:#03070b9c}
+.personal-ending{top:25%;width:min(430px,35vw)}
+.personal-ending h1{font-size:clamp(38px,4.1vw,60px);line-height:1.13}
+.personal-ending>p{font-size:14px;line-height:1.7;color:#c0b49d;max-width:300px}
+.transformation-status{position:absolute;bottom:139px;left:50%;transform:translateX(-50%);z-index:4;color:#b5c6d0;font-size:14px;text-align:center;pointer-events:none}
+.personal-returned .personal-ending{animation:return-light 1.6s ease both}
+.motion-paused .personal-ending{animation:none}
+@media(min-width:1500px){.terra-invitation,.personal-panel,.personal-ending{left:9vw}}
+@media(max-height:750px) and (min-width:701px){.terra-invitation{top:57%}.personal-panel{top:18%;max-height:calc(100svh - 220px)}.personal-panel-editing{top:82px;max-height:calc(100svh - 205px)}.personal-panel h2{font-size:44px;margin-bottom:20px}.personal-panel-heading h2{font-size:30px}.personal-place-list li{margin-bottom:14px}.personal-ending{top:23%}}
+@media(max-width:700px){
+ .terra-invitation{left:23px;top:auto;bottom:151px;gap:0}
+ .signature-button{padding:14px 18px;min-width:205px}
+ .terra-invitation:has(.depth-toggle[aria-expanded=true]){left:23px;top:87px;gap:10px;display:grid}
+ .experience:has(.depth-toggle[aria-expanded=true]) .signature-button{display:none}
+ .personal-panel{left:23px;top:auto;bottom:145px;width:calc(100% - 92px);max-height:42svh;background:#03070bdc;padding:16px 0 0}
+ .personal-panel h2{font-size:34px;margin-bottom:15px}
+ .personal-intro{font-size:14px;margin-bottom:18px}
+ .personal-panel-editing{left:15px;right:15px;width:auto;bottom:132px;max-height:48svh;padding:18px;background:#061019f5}
+ .personal-panel-heading h2{font-size:30px;margin-bottom:18px}
+ .personal-panel .journey-button{font-size:14px;padding:13px 15px}
+ .personal-place-list{margin-bottom:15px}
+ .personal-place-list li{margin-bottom:12px;gap:12px}
+ .personal-place-list p{font-size:13px;margin-top:2px}
+ .personal-secondary .text-button{font-size:13px;min-height:44px}
+ .in-astra .view-tools{top:18%}
+ .personal-ending{left:25px;top:90px;max-height:none;width:calc(100% - 50px);background:none}
+ .personal-ending h1{font-size:36px;max-width:340px;margin-bottom:13px}
+ .personal-ending h1 br:first-child{display:none}
+ .personal-ending>p{font-size:13px;max-width:300px;margin-bottom:0}
+ .transformation-status{bottom:135px;left:23px;right:23px;transform:none;font-size:13px}
+ .in-astra .journey-index{display:none}
+ .personal-marker .marker-label{font-size:12px}
+}
+
 /* Release history is a quiet reading surface beside the star field. */
 .credit-links{display:flex;align-items:center;gap:18px}
 .version-link{color:#cab994;white-space:nowrap;text-decoration:underline!important;text-underline-offset:4px}
