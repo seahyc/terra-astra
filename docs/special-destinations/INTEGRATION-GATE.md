@@ -17,3 +17,5 @@ TypeScript, production build, special-destination geography/lifecycle/counter-cl
 YC actual branch arrived during the gate. The user extended the Live integration/deployment deadline to14:45. Integrated the minimal GPT-Live-1 WebRTC controller plus bounded five-target planner and hosted endpoints; deliberately omitted YC model library/database/rendering/data expansions. Native typing “Show me the vibe in New York.” starts movement on submission and settles in New York city, then explains. All10 transport checks,6 hosted-handler checks and navigation tests pass. Signed-out voice presents an explicit sign-in link. Public Site environment inspection returned no server variables at revision0, so actual Live audio requires OPENAI_API_KEY configuration and signed-in microphone verification; do not claim successful public speech.
 
 Publication evidence follows after deployment. v0.7.1 remains the source and saved-publication fallback.
+
+At14:36 the user supplied the API credential. Configured OPENAI_API_KEY as a secret on the existing public Site, environment revision1. Actual audio remains subject to deployment and signed-in browser verification.
