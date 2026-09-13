@@ -1,16 +1,18 @@
 #!/usr/bin/env node
 
 import http from "node:http";
-import { streamOpening } from "./opening.mjs";
 import { build } from "esbuild";
 import { readFile } from "node:fs/promises";
 import { parseEnv } from "node:util";
 import { runProbe, SEA_DATASET_INVENTORY, redact } from "./probe-agents.mjs";
+import { createImageAnswerService } from './image-answer.mjs';
+import { createAnswerRouter } from '../../lib/terra/server/answer-router.mjs';
 
 const HOST = "127.0.0.1";
 const PORT = 5180;
 const ORIGIN = `http://${HOST}:${PORT}`;
 const BODY_LIMIT = 64 * 1024;
+const IMAGE_BODY_LIMIT = 16 * 1024;
 const PROFILE_PATH = new URL("../../public/data/sea-java-profile.json", import.meta.url);
 
 async function resolveApiKey() {
@@ -27,10 +29,13 @@ const page = await readFile(new URL("./index.html", import.meta.url));
 const profile = await readFile(PROFILE_PATH);
 const { points: _profilePoints, ...profileSummary } = JSON.parse(profile);
 const agentInventory = Object.freeze({ ...SEA_DATASET_INVENTORY,
-  sculptures: [{name:'Angkor Wat', available_in_client:true, kind:'illustrative starlight particle model', features:'five towers, terraces, galleries, causeway and moat outline', limitation:'Schematic and artistically exaggerated, not a surveyed reconstruction', sources:['https://www.earthobservatory.nasa.gov/images/5112/angkor-wat','https://whc.unesco.org/en/list/668']}], java_profile: { ...profileSummary, visualization: { available_in_client: true, point_count: _profilePoints.length } } });
+  world_visualization: { available_in_client: true, command_boundary: 'Shared WorldCommand supports any validated geographic anchor at regional scale', detailed_city_targets: ['Singapore','New York'], orbit: '12 deterministic illustrated orbital lights', aircraft: '20 deterministic illustrated city-pair movements', ships: '6 deterministic illustrated open-water movements', urban: 'Procedural activity is available only for curated New York and Singapore city views' },
+  java_profile: { ...profileSummary, visualization: { available_in_client: false, point_count: _profilePoints.length, limitation: 'Available to the answer backend as measured evidence; no shared WorldCommand visualization exists.' } } });
 const plannerBundle = await build({ entryPoints: [new URL('../../lib/terra/answer-plan.ts', import.meta.url).pathname], bundle: true, platform: 'node', format: 'esm', write: false });
 const { planQuestion, worldAnswerSchema } = await import(`data:text/javascript;base64,${Buffer.from(plannerBundle.outputFiles[0].text).toString('base64')}`);
+const answerQuestion = createAnswerRouter({ worldAnswerSchema, runProbe, fastModel: process.env.OPENAI_FAST_MODEL || 'gpt-5.6-luna', answerModel: process.env.OPENAI_ANSWER_MODEL || 'gpt-5.6-terra' });
 let activeAgent = null;
+const imageAnswers = createImageAnswerService();
 
 function send(res, status, body, type = "application/json; charset=utf-8") {
   const payload = Buffer.isBuffer(body) ? body : Buffer.from(typeof body === "string" ? body : JSON.stringify(body));
@@ -44,14 +49,14 @@ function send(res, status, body, type = "application/json; charset=utf-8") {
   res.end(payload);
 }
 
-async function jsonBody(req) {
+async function jsonBody(req, limit = BODY_LIMIT) {
   const declared = Number(req.headers["content-length"] || 0);
-  if (declared > BODY_LIMIT) throw Object.assign(new Error("Request body exceeds 64 KiB"), { status: 413 });
+  if (declared > limit) throw Object.assign(new Error(`Request body exceeds ${limit / 1024} KiB`), { status: 413 });
   const chunks = [];
   let length = 0;
   for await (const chunk of req) {
     length += chunk.length;
-    if (length > BODY_LIMIT) throw Object.assign(new Error("Request body exceeds 64 KiB"), { status: 413 });
+    if (length > limit) throw Object.assign(new Error(`Request body exceeds ${limit / 1024} KiB`), { status: 413 });
     chunks.push(chunk);
   }
   if (!length) throw Object.assign(new Error("JSON body required"), { status: 400 });
@@ -71,6 +76,20 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET" && url.pathname === "/api/profile") return send(res, 200, profile);
     if (req.method === "GET" && ["/client.mjs", "/profile.mjs"].includes(url.pathname)) {
       return send(res, 200, await readFile(new URL('.' + url.pathname, import.meta.url)), "text/javascript; charset=utf-8");
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/image') {
+      verifyOrigin(req);
+      const apiKey = await resolveApiKey();
+      if (!apiKey) return send(res, 503, { error: 'OpenAI API key is not configured' });
+      const controller = new AbortController();
+      const abortDisconnected = () => controller.abort(new Error('Client disconnected'));
+      req.once('aborted', abortDisconnected); res.once('close', abortDisconnected);
+      try {
+        const result = await imageAnswers.generate({ apiKey, input: await jsonBody(req, IMAGE_BODY_LIMIT), signal: controller.signal });
+        if (!res.destroyed) return send(res, 200, result);
+      } finally { req.off('aborted', abortDisconnected); res.off('close', abortDisconnected); }
+      return;
     }
 
     if (req.method === "POST" && url.pathname === "/api/session") {
@@ -124,8 +143,14 @@ const server = http.createServer(async (req, res) => {
       const openingController = new AbortController();
       const emit = event => { if(streaming && !res.destroyed && !res.writableEnded) res.write(JSON.stringify(event)+'\n'); };
       if(streaming){res.writeHead(200,{'Content-Type':'application/x-ndjson; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.flushHeaders();emit({type:'started'});}
-      const opening = streaming ? streamOpening({apiKey,question:query,inventory:plan?.inventory??contextInventory,signal:AbortSignal.any([controller.signal,openingController.signal]),onDelta:delta=>emit({type:'opening.delta',delta}),onDone:text=>emit({type:'opening.done',text})}).catch(()=>{}) : Promise.resolve();
+      const opening = Promise.resolve();
       try {
+        if (url.pathname === '/api/answer') {
+          const inventory = plan ? { ...contextInventory, relevant_measurements: plan.inventory } : contextInventory;
+          const result = await answerQuestion({ apiKey, question: query, inventory, signal: AbortSignal.any([controller.signal, AbortSignal.timeout(125000)]), onOpening: text => emit({ type: 'opening.done', text }) });
+          if (streaming) { emit({type:'result',result}); res.end(); return; }
+          return send(res,200,result);
+        }
         const report = await runProbe({ apiKey, question: query, inventory: plan?.inventory ?? contextInventory, inventoryMode: "inline", answerMode: url.pathname === "/api/answer" && !plan ? "world" : "evidence", signal: controller.signal, keepSession: false });
         let world = null;
         if (url.pathname === "/api/answer" && !plan) {

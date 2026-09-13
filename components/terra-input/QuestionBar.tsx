@@ -52,6 +52,6 @@ export default function QuestionBar({ onQuestion, disabled = false, busy = false
         ? <button type="button" onClick={onCancel} aria-label="Cancel question"><Square size={16} /></button>
         : <button type="submit" disabled={disabled || isBusy || !text.trim()} aria-label="Send question"><ArrowUp size={19} /></button>}
     </form>
-    {error ? <p className={styles.error} role="alert">{error}</p> : <p className={styles.hint}>{disabled ? 'Earth is loading…' : isBusy ? 'Following your question…' : 'Type a question and press Enter'}</p>}
+    {error ? <p className={styles.error} role="alert">{error}</p> : disabled ? <p className={styles.hint} role="status">Earth is loading…</p> : null}
   </div>;
 }
