@@ -129,6 +129,22 @@ test('Stop prevents buffered delegation events from starting another answer', as
   assert.equal(h.track.readyState, 'ended');
 });
 
+test('Stop ends microphone capture immediately while final usage can still arrive', async t => {
+  const h = harness(t); await h.start();
+  h.controller.stop();
+  assert.equal(h.track.readyState, 'ended', 'User Stop must not keep recording during the close handshake');
+  assert.equal(h.peer.channel.readyState, 'open', 'Data channel remains available for final usage');
+  assert.equal(h.peer.channel.sent.at(-1).type, 'session.close');
+  h.track.dispatchEvent(new Event('ended'));
+  assert.equal(h.errors.length, 0, 'Intentional Stop must not report a broken microphone');
+  t.mock.timers.tick(14999);
+  assert.equal(h.track.readyState, 'ended');
+  assert.equal(h.peer.connectionState, 'connected');
+  h.receive({ type: 'session.closed', usage: { total_tokens: 7 } });
+  assert.match(h.statuses.at(-1), /closed.*total_tokens/);
+  assert.equal(h.peer.connectionState, 'closed');
+});
+
 test('voice stays active beyond three minutes and still accepts questions until Stop', async t => {
   const h = harness(t); await h.start(); t.mock.timers.tick(240000);
   assert.equal(h.statuses.at(-1), 'started');

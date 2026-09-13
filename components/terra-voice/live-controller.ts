@@ -487,6 +487,10 @@ export function createLiveController(
       return;
     }
     closing = true;
+    // Stop capture immediately; only the data channel waits for final usage.
+    // Set closing first so an ended event cannot report a false device failure.
+    microphone?.getTracks().forEach((track) => track.stop());
+    microphone = null;
     callbacks.onStatus("finalizing");
     try {
       channel.send(
