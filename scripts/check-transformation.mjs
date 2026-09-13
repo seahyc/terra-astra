@@ -58,13 +58,15 @@ const result=new THREE.Vector3(),frameBasis=openingFrame(95,19);
 assert.ok(Math.abs(frameBasis.determinant()-1)<1e-12,'Opening basis is orthonormal');
 for(const places of cases){
   const camera=personalCamera(places);assert.ok(Number.isFinite(camera.lat)&&Number.isFinite(camera.lon),'Global frame is finite, including antipodes and zero-sum triples');
-  const earth=personalGeography(places),stars=personalAstra(frameBasis);
+  const earth=personalGeography(places),stars=personalAstra(places,frameBasis);
   for(let i=0;i<3;i++){
     assert.ok(Math.abs(earth[i].length()-1.085)<1e-10);
-    for(let j=i+1;j<3;j++)assert.ok(stars[i].distanceTo(stars[j])>.8,'Open personal stars must remain distinct even with nearby geographic places');
+    for(let j=i+1;j<3;j++)assert.ok(stars[i].distanceTo(stars[j])>.55,'Open personal stars must remain distinct even with nearby geographic places');
     for(let t=0;t<=1;t+=.05){personalArc(earth[i],earth[(i+1)%3],t,result);assert.ok(result.toArray().every(Number.isFinite),'Antipodal geodesic is finite');}
   }
 }
+assert.notDeepEqual(personalAstra(cases[0],frameBasis).map(p=>p.toArray()),personalAstra(cases[4],frameBasis).map(p=>p.toArray()),'Different geographic triples form different Astra geometry');
+assert.deepEqual(personalAstra(cases[0],frameBasis).map(p=>p.toArray()),personalAstra(cases[0],frameBasis).map(p=>p.toArray()),'Personal geometry is deterministic');
 for(let i=0;i<2000;i++){
   const original=new THREE.Vector3(Math.sin(i*2.3),Math.sin(i*3.7),Math.cos(i*.9)).normalize().multiplyScalar(.23+(i%90)/100);
   openingPosition(original.x,original.y,original.z,0,frameBasis,result);assert.deepEqual(result.toArray(),original.toArray(),'Earth endpoint is exactly unchanged');

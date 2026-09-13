@@ -42,14 +42,32 @@ export function personalCamera(places: PersonalPlaces) {
 
 /** A readable open constellation, with each place retaining its identity.
  * Earth endpoints are real coordinates; these three separated Astra endpoints
- * are deliberately a personal composition, not a geographic distance chart.
+ * derive from the three great-circle distances. Bounded distance compression
+ * retains readability; the result is a personal composition, not a scale map.
  */
-export function personalAstra(frame: THREE.Matrix3) {
-  return [
-    new THREE.Vector3(-.88, .38, .22),
-    new THREE.Vector3(.05, -.43, .60),
-    new THREE.Vector3(.86, .49, -.04),
-  ].map(p => p.applyMatrix3(frame));
+export function personalAstra(places: PersonalPlaces, frame: THREE.Matrix3) {
+  const geography = personalGeography(places).map(p => p.normalize());
+  const angular = (a: number, b: number) => Math.acos(THREE.MathUtils.clamp(geography[a].dot(geography[b]), -1, 1));
+  const distances = [angular(0, 1), angular(0, 2), angular(1, 2)];
+  const maximum = Math.max(.000001, ...distances);
+  // Compress extreme ratios, rather than letting two nearby places disappear.
+  const [ab, ac, bc] = distances.map(d => .55 + .45 * d / maximum);
+  const x = (ac * ac + ab * ab - bc * bc) / (2 * ab);
+  const y = Math.max(.34, Math.sqrt(Math.max(0, ac * ac - x * x)));
+  const points = [new THREE.Vector3(0, 0, 0), new THREE.Vector3(ab, 0, 0), new THREE.Vector3(x, y, 0)];
+  const center = points.reduce((sum, p) => sum.add(p), new THREE.Vector3()).multiplyScalar(1 / 3);
+  const rotation = -.70, cosine = Math.cos(rotation), sine = Math.sin(rotation);
+  for (const p of points) {
+    p.sub(center);const px = p.x, py = p.y;p.set(px * cosine - py * sine, px * sine + py * cosine, 0);
+  }
+  const extent = Math.max(...points.map(p => Math.max(Math.abs(p.x) / .96, Math.abs(p.y) / .64)));
+  const span = .88 + .12 * Math.min(1, maximum / Math.PI);
+  return points.map((p, i) => {
+    p.multiplyScalar(span / Math.max(.000001, extent));
+    // Small, coordinate-derived depth gives every submitted triple a stable volume.
+    p.z = .25 + .24 * geography[i].y + .16 * geography[i].x;
+    return p.applyMatrix3(frame);
+  });
 }
 
 /** Warm lifted geodesic threads. Antipodal endpoints use a stable perpendicular. */
