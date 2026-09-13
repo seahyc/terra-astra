@@ -5,6 +5,8 @@ export const releases = [
   {
     version: '0.8.0', date: '2026-09-13', dateLabel: '13 September 2026', title: 'An explanation beside the Earth', milestone: 'This build',
     changes: [
+      'Prepared models and the approved wind turbine share a reusable library. New validated models are saved in shared D1 storage and retrieved cheaply for repeat questions.',
+      'Live starts explaining while native Agents coordinates the bounded model recipe; named model parts use the original globe shader and camera.',
       'Answers now have an editorial title, short lead and generated explanatory graphic beside the map. A slim bottom transcript separates your words from Astra’s, with one stop action.',
       'A data-only model planner composes simple three-dimensional shapes into starlight models within the existing globe. The camera settles into the horizon and gently orbits the focal scene.',
       'Phone layouts place the globe above a bounded answer panel and keep touch controls above the safe area. Manual movement and reduced motion remain respected.',

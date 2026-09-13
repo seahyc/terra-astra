@@ -1,4 +1,6 @@
-import { env } from 'cloudflare:workers';
+import {createLibraryService} from '@/lib/terra/model-library/service.mjs';
+import {createD1ModelStore} from '@/lib/terra/model-library/store.mjs';
+import { env, waitUntil } from 'cloudflare:workers';
 import { getChatGPTUser } from '@/app/chatgpt-auth';
 import { planQuestion, worldAnswerSchema } from '@/lib/terra/answer-plan';
 import { createTerraHttpHandler } from '@/lib/terra/server/http-handler.mjs';
@@ -17,6 +19,7 @@ const handle = createTerraHttpHandler({
   planQuestion, worldAnswerSchema, runProbe, streamOpening,
   answerQuestion: createAnswerRouter({ worldAnswerSchema, runProbe, fastModel: runtime.OPENAI_FAST_MODEL || 'gpt-5.6-luna', answerModel: runtime.OPENAI_ANSWER_MODEL || 'gpt-5.6-terra' }),
   inventory: { ...SEA_DATASET_INVENTORY, java_profile: { ...SEA_DATASET_INVENTORY.java_profile, visualization: { available_in_client: false, point_count: 121, source: 'Cached measurements only; no shared profile visualization.' } }, world_visualization: sceneInventory },
+  libraryService: createLibraryService({defer:waitUntil,store:createD1ModelStore((env as unknown as {DB?:D1Database}).DB)}),
   modelService: createModelAnswerService({validateRecipe:validateProceduralModelRecipe}),
   imageService: createImageAnswerService({ model: runtime.OPENAI_IMAGE_MODEL || 'gpt-image-2.5-flare', cacheSize: 1 }),
 });

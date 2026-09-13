@@ -7,7 +7,7 @@ export const MAX_REGISTERED_TURNS = 1000;
 
 export const TELEMETRY_EVENT_NAMES = [
   'turn.started', 'answer.http', 'answer.opening', 'answer.result',
-  'image.lifecycle', 'model.lifecycle', 'voice.status', 'navigation.command',
+  'image.lifecycle', 'model.lifecycle', 'voice.response', 'voice.status', 'navigation.command',
   'turn.cancelled', 'turn.error', 'turn.finished',
 ] as const;
 
@@ -33,9 +33,10 @@ const RULES: Record<TelemetryEventName, Record<string, readonly JsonScalar[] | '
   'answer.opening': { phase: ['first', 'complete'], duration_ms: 'number' },
   'answer.result': { model: [...MODEL_VALUES], route: ['quick', 'standard', 'research'], subagent_count: 'number', server_elapsed_ms: 'number', duration_ms: 'number' },
   'image.lifecycle': { phase: ['requested', 'ready', 'error', 'cancelled', 'stale'], status: 'number', duration_ms: 'number', model: [...MODEL_VALUES], cached: 'boolean' },
-  'model.lifecycle': { phase: ['requested', 'ready', 'error', 'cancelled', 'stale'], point_count: 'number', duration_ms: 'number', model: [...MODEL_VALUES] },
+  'model.lifecycle': {cached:'boolean',persisted:'boolean',phase: ['requested', 'ready', 'error', 'cancelled', 'stale'], point_count: 'number', duration_ms: 'number', model: [...MODEL_VALUES] },
+  'voice.response': {phase:['first_transcript','first_audio']},
   'voice.status': { status: ['off', 'checking_availability', 'requesting_microphone', 'microphone_muted', 'connecting', 'reconnecting', 'awaiting_session_start', 'started', 'finalizing', 'closed', 'startup_timeout', 'disconnected', 'error'] },
-  'navigation.command': { command_type: ['flyTo', 'flyToLocation', 'setScale', 'setPerspective', 'focusLayer', 'highlightTarget', 'showProceduralModel', 'clearProceduralModel', 'resetView'], index: 'number', ok: 'boolean', duration_ms: 'number', tier: ['planet', 'region', 'city', 'street'], perspective: ['aerial', 'horizon', 'cutaway'], busy: 'boolean', target_kind: ['catalogue', 'dynamic', 'none'] },
+  'navigation.command': { command_type: ['flyTo', 'flyToLocation', 'setScale', 'setPerspective', 'focusLayer', 'highlightTarget', 'showProceduralModel', 'clearProceduralModel', 'showLibraryModel', 'focusModelPart', 'cancelWorldTurn', 'resetView'], index: 'number', ok: 'boolean', duration_ms: 'number', tier: ['planet', 'region', 'city', 'street'], perspective: ['aerial', 'horizon', 'cutaway'], busy: 'boolean', target_kind: ['catalogue', 'dynamic', 'none'] },
   'turn.cancelled': { reason: ['user', 'superseded', 'unmount'] },
   'turn.error': { error_kind: ['network', 'http', 'unreadable', 'validation', 'navigation', 'unknown'] },
   'turn.finished': { outcome: ['completed', 'navigation_only', 'error', 'cancelled', 'stale'] },

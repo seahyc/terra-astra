@@ -11,3 +11,7 @@
 .diagnostics summary{display:grid;place-items:center;min-width:44px;min-height:44px;padding:0}.diagnostics div{bottom:92px}.diagnostics button{min-height:44px;padding:7px 9px}
 
 .editorial>*{flex-shrink:0}.editorialCopy{width:100%}
+
+.library{display:grid;gap:8px;margin-top:18px;color:#acb3be;font:11px Arial,sans-serif}.library select{width:100%;min-height:40px;border:1px solid #d6c8ff30;border-radius:6px;background:#0d131c;color:#e5dfd0;padding:8px}.parts{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.parts button{min-height:32px;background:#111923;border:1px solid #d6c8ff25;border-radius:5px;color:#c4becf;padding:6px 9px;font:11px Arial,sans-serif;cursor:pointer}.parts button:focus-visible,.library select:focus-visible{outline:2px solid #eee5ff;outline-offset:2px}
+
+.modelEvidence{margin-top:10px;color:#8fa5b3;font:11px/1.5 Arial,sans-serif}.modelEvidence summary{cursor:pointer;padding-block:7px}.modelEvidence p{margin:4px 0}
