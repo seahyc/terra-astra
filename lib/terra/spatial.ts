@@ -38,5 +38,5 @@ float spatialVisibility(vec3 world){
   float discriminant=b*b-dot(cameraPosition,cameraPosition)+1.12*1.12;
   float entry=max(0.0,-b-sqrt(max(0.0,discriminant)));
   float depth=max(0.0,distance(world,cameraPosition)-entry);
-  return mix(1.0,(1.0-cutaway*cut)*exp(-depth*mix(2.9,1.4,cutaway)),depthMix);
+  return mix(1.0,(1.0-cutaway*cut*(1.0-opening))*exp(-depth*mix(mix(2.9,1.4,cutaway),.24,openingEase(opening))),depthMix);
 }`;
