@@ -387,7 +387,7 @@ export default function GlobeVoice({ ready, onAskReady }: Props) {
       {userCaption && <div className={styles.turn}><span className={styles.you}>You</span><p className={/^\s*\[[^\]]+\]\s*$/.test(userCaption) ? styles.nonverbal : undefined}>{userCaption}</p></div>}
       {error ? <div className={styles.turn}><span className={styles.astra}>Astra</span><p role="alert" className={styles.error}>{error}</p></div> : agentCaption ? <div className={styles.turn}><span className={styles.astra}>Astra</span><p className={/^\s*\[[^\]]+\]\s*$/.test(agentCaption) ? styles.nonverbal : undefined}>{agentCaption}</p></div> : progress ? <div className={styles.preload} aria-label="Preparing the explanation"><span/><span/><span/></div> : null}
     </div>
-    {needsSignIn && <p className={styles.statusLine}><a href="/signin-with-chatgpt?return_to=%2F">Sign in with ChatGPT for voice, answers and images</a></p>}
+    {needsSignIn && <p className={styles.statusLine}><a className={styles.signInButton} href="/signin-with-chatgpt?return_to=%2F" title="Enable voice, answers and images">Sign in with ChatGPT</a></p>}
     <div className={styles.inputRow}>
       <QuestionBar onQuestion={ask} disabled={!ready} busy={busy} onCancel={cancel}/>
       <button className={`${styles.voiceButton} ${isOn ? styles.active : ''}`} type="button" disabled={!ready || (busy && !isOn)} onClick={() => isOn ? cancel() : void live.current?.start()} aria-label={isOn ? busy ? 'Voice active while answering' : 'Stop voice' : 'Talk to Earth'} title={isOn ? busy ? 'Voice active while answering' : 'Stop voice' : 'Talk to Earth'}>{isOn && !busy ? <Square size={15}/> : <Mic size={19}/>}</button>
