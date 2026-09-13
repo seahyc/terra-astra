@@ -38,7 +38,7 @@ These are engineering actions in Codex. No runtime Ask Astra inference is implem
 
 ## Pending delivery verification
 
-Native deployment, judge repository access, video duration/upload and portal submission must receive their own evidence before completion is claimed.
+Native deployment succeeded for v0.4.1 on 13 September at 11:14:45 SGT. Unauthenticated HTTP read returned 200, and the public browser showed v0.4.1, native WebGL and no console errors/warnings. Judge repository access, video duration/upload and portal submission remain outstanding.
 
 ## Runtime model reference
 

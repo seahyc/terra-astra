@@ -1,10 +1,10 @@
 # Teammate task — seahyc
 
-Status: proposed scope, awaiting team agreement. Do not start runtime implementation until the owner confirms this contract. GitHub invitation sent; acceptance is separate from the hackathon portal team join.
+Status: proposed scope, awaiting team agreement. Do not start runtime implementation until the owner confirms this contract. GitHub write access for seahyc verified at 11:17 SGT. The hackathon portal team join is separate and remains unverified.
 
 Repository: https://github.com/shariffster/terra-astra (private during setup).
-Base: `handoff/codex-2026-09-13` at `3dce4c5d5fec20ab6b0b98c675de09713879c93c`.
-Work branch: `feat/ask-astra`. Create from that base in your own checkout. Keep all historical tags. No force pushes.
+Base: `v0.4.1` at `c4a4dad2281203eedc50138d4dac2a1c4048309c`.
+Work branch: `feat/ask-astra`, reserved on GitHub from that base. Check it out in your own clone. Keep all historical tags. No force pushes.
 
 You own only these new files:
 - `app/ask-astra.tsx` and `app/ask-astra.module.css`
