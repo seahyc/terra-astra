@@ -1,9 +1,17 @@
 /** User-facing release history. Keep historical entries tied to their saved milestones. */
-export const currentVersion = '0.8.1';
+export const currentVersion = '0.8.2';
 
 export const releases = [
   {
-    version: '0.8.1', date: '2026-09-13', dateLabel: '13 September 2026', title: 'A stage for every question', milestone: 'This build',
+    version: '0.8.2', date: '2026-09-13', dateLabel: '13 September 2026', title: 'Ready to ask', milestone: 'This build',
+    changes: [
+      'A clear Sign in with ChatGPT button gives visitors an obvious way to start.',
+      'The answer panel drops the model-library picker; Astra still selects and reuses models automatically, with named-part controls available in the explanation.',
+    ],
+    review: 'The underlying v0.8.1 demo was verified on the public site at phone width: Angkor Wat appeared on the globe and a local debug report captured timing without conversation text. This update changes the entry and answer controls.',
+  },
+  {
+    version: '0.8.1', date: '2026-09-13', dateLabel: '13 September 2026', title: 'A stage for every question', milestone: 'Public demo',
     changes: [
       'Includes the responsive explanation panel, compact You/Astra transcript, reusable model library, live voice and local diagnostics prepared for v0.8.0.',
       'Generated models without a geographic location receive a fitted presentation view inside the globe scene.',
