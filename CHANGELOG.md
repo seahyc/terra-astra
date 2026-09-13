@@ -97,3 +97,11 @@ For rollback, select the known saved Sites version and redeploy it when authoriz
 - Separates the local native-Agents probe CLI from the Worker-safe module, removing a file URL evaluated during hosted API startup.
 - Fixes the production `/api/terra/status` and answer routes throwing before request handling. The v0.7.0 public globe loaded correctly but its hosted API did not.
 - Preserves the source and saved Sites milestone for v0.7.0.
+
+## v0.7.2 — 2026-09-13 — Clearer answers and diagnostics
+- Routes comparison, explanation, research and particular-object tracking requests to the answer backend before considering camera-only shortcuts. Keeps simple navigation immediate.
+- Adds a collapsed Diagnostics panel with metadata-only local recording, JSON export and clear controls. Records request/stream timing, model route, command outcomes, image lifecycle, voice connection status and safe error categories; retains at most 500 events and 1,000 turn IDs. No remote telemetry upload or conversation/audio recording is added.
+- Shares neutral scene inventory wording across hosted, local and deep-answer agents; removes routine layer caveats while preserving identity/time-source requirements for external tracking.
+- Makes HTML and malformed answer streams fail with readable messages, and cancels broken streams.
+- Adds a 20-case general-answering evaluation specification and a separate live QA record. The full specification is not an executed test suite.
+- Validation: targeted navigation, streaming and telemetry checks, including redaction, cancellation and 10,000-turn bounded storage. Live QA identifies remaining regional visibility and actual flight/satellite feed limitations. Hosted microphone/audio and physical-phone testing remain separate verification tasks.
