@@ -118,6 +118,23 @@ assert.equal((await complete({type:'showLibraryModel',recipe:libraryRecipe('wind
 assert.equal(engine.worldState().proceduralModel.parts.length,9);
 assert.ok(objects().filter(o=>o.userData.libraryModel).length>0,'Library clouds use the real Earth renderer');
 assert.equal((await complete({type:'focusModelPart',id:'tower'})).ok,true);
+// A tall model without a geographic target must fit the actual camera, including
+// portrait view offsets. Offset the recipe to catch missing tangent centering.
+engine.configure(baseOptions);await complete({type:'resetView'});await complete({type:'setPerspective',perspective:'horizon'});
+const tallRecipe={id:'generated-aaaaaaaaaaaaaaaaaaaa',title:'Tall offset lighthouse fixture',source:'procedural',parts:[{id:'tower',label:'Tower',shape:'cylinder',position:[6,5,-5],size:[.8,10,.8],tone:'gold',rotation:[0,0,0],motion:null}]};
+assert.equal((await complete({type:'showLibraryModel',recipe:tallRecipe})).ok,true);
+assert.equal(engine.worldState().tier,'region');assert.equal(engine.worldState().location.name,'Model view');
+for(const [width,height] of [[1280,720],[390,844],[390,667]]){
+ host.clientWidth=width;host.clientHeight=height;resizeCallback();tick();rendered.scene.updateMatrixWorld(true);
+ const projected=[];for(const o of objects().filter(o=>o.userData.libraryModel)){const a=o.geometry.getAttribute('position');for(let i=0;i<a.count;i++)projected.push(new THREE.Vector3().fromBufferAttribute(a,i).applyMatrix4(o.matrixWorld).project(rendered.camera));}
+ assert.ok(projected.every(p=>Number.isFinite(p.x+p.y+p.z)&&p.z>-1&&p.z<1),'Model camera and geometry remain finite/in front');
+ const xs=projected.map(p=>(p.x*.5+.5)*width),ys=projected.map(p=>(.5-p.y*.5)*height);
+ assert.ok(Math.min(...xs)>width*.05&&Math.max(...xs)<width*.96,'Entire model fits viewport width');
+ assert.ok(Math.min(...ys)>height*.04&&Math.max(...ys)<height*(width<700?.45:.82),'Entire model fits above phone answer panel');
+ console.log(`PASS model framing ${width}x${height}: x ${Math.min(...xs).toFixed(0)}..${Math.max(...xs).toFixed(0)}, y ${Math.min(...ys).toFixed(0)}..${Math.max(...ys).toFixed(0)}`);
+}
+host.clientWidth=800;host.clientHeight=600;resizeCallback();tick();
+
 engine.configure({...baseOptions,motion:true});const staleFlight=engine.command({type:'flyTo',targetId:'singapore'});const staleModel=engine.command({type:'showLibraryModel',recipe:libraryRecipe('port')});
 await engine.command({type:'cancelWorldTurn'});for(let i=0;i<10;i++){tick(100);await Promise.resolve();}
 assert.equal((await staleFlight).ok,false);assert.equal((await staleModel).ok,false);assert.equal(engine.worldState().proceduralModel,undefined);
