@@ -9,7 +9,7 @@ import { personalGeography, personalCamera, personalAstra, personalArc } from '.
 import { scintillation } from '../lib/terra/scintillation.ts';
 import { memoryLight, cityScreenBudget } from '../lib/terra/choreography.ts';
 
-const root = new URL('../lib/terra/', import.meta.url).href;
+const root = new URL('../lib/', import.meta.url).href;
 registerHooks({ resolve(specifier, context, next) {
   if (context.parentURL?.startsWith(root) && specifier.startsWith('.') && !specifier.endsWith('.ts')) return next(specifier + '.ts', context);
   return next(specifier, context);
@@ -44,6 +44,7 @@ const engine = await createEarth(host, { querySelector: () => null }, {
   ready: noop, coordinates: noop, interact: noop, arrival: noop,
   stage: s => stages.push(s), transformation: state => states.push(state), personalSettled: () => personalArrivals++, error: message => assert.fail(message),
 }, new AbortController().signal);
+engine.skipGenesis(); // Genesis has its own checks; preserve the settled-Earth cases.
 const options = { glow: 1.15, shimmer: 1.1, depth: true, threads: .55, density: .85, borders: false, motion: false };
 const tick = (ms = 60) => { clock += ms; const next = frame; frame = null; assert.ok(next); next(clock); };
 const makePlaces = coordinates => coordinates.map(([lat,lon],i) => ({id:String(i),label:'Place '+i,lat,lon,meaning:'Meaning '+i}));

@@ -7,7 +7,7 @@ import { stories } from '../lib/terra/stories.ts';
 import { scintillation } from '../lib/terra/scintillation.ts';
 import { memoryLight, cityScreenBudget } from '../lib/terra/choreography.ts';
 
-const root = new URL('../lib/terra/', import.meta.url).href;
+const root = new URL('../lib/', import.meta.url).href;
 registerHooks({ resolve(specifier, context, next) {
   if (context.parentURL?.startsWith(root) && specifier.startsWith('.') && !specifier.endsWith('.ts')) return next(specifier + '.ts', context);
   return next(specifier, context);
@@ -41,6 +41,7 @@ const engine = await createEarth(host, { querySelector: () => null }, {
   ready: noop, coordinates: noop, interact: noop,
   stage: s => stages.push(s), arrival: id => arrivals.push(id), view: mode => views.push(mode), error: message => assert.fail(message),
 }, new AbortController().signal);
+engine.skipGenesis(); // This regression harness begins at the settled Earth.
 const options = { glow: 1.15, shimmer: 1.1, depth: true, threads: .55, density: .85, borders: false, motion: false };
 const tick = (ms = 60) => { clock += ms; const next = frame; frame = null; assert.ok(next, 'Engine should schedule a frame'); next(clock); };
 engine.configure(options);
