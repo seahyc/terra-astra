@@ -2,6 +2,11 @@
 
 Semantic versions label the experience; Sites version numbers identify saved deployment packages. They are separate counters. `lib/terra/releases.ts` is the source for the public history page and current build badge. Git tags identify exact source snapshots; native Sites records are authoritative for save/deploy status.
 
+## v0.10.0-alpha.2 — 2026-09-14 — A separate home for open exploration
+- Registers the personal fork as its own Sites project so publishing cannot replace the teammate-era hackathon deployment.
+- Keeps the renderer public while visitor-owned inference remains behind the isolated Codex account bridge.
+- The first release is private until the external bridge, real device authorization, and complete hosted request path are verified.
+
 ## v0.10.0-alpha.1 — 2026-09-13 — Open exploration preview
 - Personal-fork preview: public globe, prepared models and data feeds; inference requires a visitor-owned Codex connection through official device authorization.
 - General grounded search and safe procedural recipes replace demo evidence routing. Follow-up context is carried explicitly. No paid API-key fallback, live voice or image-generation calls.

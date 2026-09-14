@@ -1,7 +1,15 @@
 /** User-facing release history. Keep historical entries tied to their saved milestones. */
-export const currentVersion = '0.10.0-alpha.1';
+export const currentVersion = '0.10.0-alpha.2';
 
 export const releases = [
+  {
+    version: '0.10.0-alpha.2', date: '2026-09-14', dateLabel: '14 September 2026', title: 'A separate home for open exploration', milestone: 'Private candidate',
+    changes: [
+      'The personal fork now has its own Sites project, independent of the teammate-era hackathon deployment.',
+      'The renderer remains public by design; visitor-owned inference still passes through the isolated Codex account bridge.',
+    ],
+    review: 'This candidate stays private until the external bridge, a real visitor device authorization, and the complete hosted question flow are verified.',
+  },
   {
     version: '0.10.0-alpha.1', date: '2026-09-13', dateLabel: '13 September 2026', title: 'An open Earth, your own account', milestone: 'Local preview',
     changes: [
