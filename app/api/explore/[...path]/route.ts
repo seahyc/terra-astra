@@ -35,7 +35,8 @@ async function handle(request: Request) {
     if (cookie) forwarded.set('cookie', cookie);
     const response = await fetch(target, { method: request.method, headers: forwarded,
       ...(request.method === 'POST' ? { body: request.body } : {}),
-      signal: AbortSignal.any([request.signal, AbortSignal.timeout(125000)]), redirect: 'error' });
+      signal: AbortSignal.any([request.signal, AbortSignal.timeout(125000)]), redirect: 'manual' });
+    if (response.status >= 300 && response.status < 400) throw new Error('Bridge redirects are not accepted.');
     const returned = new Headers(headers);
     for (const key of ['content-type', 'set-cookie', 'retry-after']) {
       const value = response.headers.get(key); if (value) returned.set(key, value);

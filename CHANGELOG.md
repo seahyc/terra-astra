@@ -2,6 +2,10 @@
 
 Semantic versions label the experience; Sites version numbers identify saved deployment packages. They are separate counters. `lib/terra/releases.ts` is the source for the public history page and current build badge. Git tags identify exact source snapshots; native Sites records are authoritative for save/deploy status.
 
+## v0.10.0-alpha.5 — 2026-09-14 — The bridge can leave the edge
+- Uses the edge runtime’s supported manual redirect mode and explicitly rejects every redirect response.
+- Fixes the hosted proxy failing before it contacted the external account bridge.
+
 ## v0.10.0-alpha.4 — 2026-09-14 — A protected network probe
 - Adds a service-credential-protected diagnostic response for the Site-to-bridge network boundary after the hosted log feed returned no events.
 - Ordinary visitors still receive only the existing generic offline state.

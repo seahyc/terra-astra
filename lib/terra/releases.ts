@@ -1,7 +1,12 @@
 /** User-facing release history. Keep historical entries tied to their saved milestones. */
-export const currentVersion = '0.10.0-alpha.4';
+export const currentVersion = '0.10.0-alpha.5';
 
 export const releases = [
+  {
+    version: '0.10.0-alpha.5', date: '2026-09-14', dateLabel: '14 September 2026', title: 'The bridge can leave the edge', milestone: 'Private candidate',
+    changes: ['The hosted proxy now uses the edge runtime’s supported redirect mode and still rejects every bridge redirect explicitly.'],
+    review: 'A protected hosted diagnostic identified the unsupported fetch option before the request left the Site.',
+  },
   {
     version: '0.10.0-alpha.4', date: '2026-09-14', dateLabel: '14 September 2026', title: 'A protected network probe', milestone: 'Private candidate',
     changes: ['A service-credential-protected diagnostic can identify the Site-to-bridge network failure while public errors stay generic.'],
