@@ -1,8 +1,9 @@
 # Open exploration preview
 
 This personal fork keeps the existing globe and WorldCommand renderer. It replaces
-the owner's paid API path with visitor-owned Codex connections. It is a local,
-testable preview; the existing public hackathon deployment has not been replaced.
+the owner's paid API path with visitor-owned Codex connections. It is deployed at
+https://terra-astra-open.seahyingcong.chatgpt.site without replacing the existing
+hackathon deployment.
 
 ## Run locally
 
@@ -57,13 +58,22 @@ Expose the bridge through authenticated HTTPS. In the Sites runtime, configure
 forwards only the Terra session cookie. Never place these runtime secrets in source
 or browser code. The bridge does not accept a shared OpenAI API key.
 
-No public bridge host or tunnel has been provisioned. A Mac-based host must remain
-awake and connected. Per-user account authorization is implemented using the
-documented experimental App Server protocol, not a promise of production support.
+The bridge runs on the owner's Mac behind the account's stable free ngrok domain.
+Two user LaunchAgents restart the bridge and tunnel after login and keep the shared
+service credential in macOS Keychain. The Mac must remain awake, logged in and
+connected; this is a personal-host durability boundary rather than cloud uptime.
+Per-user account authorization is implemented using the documented experimental App
+Server protocol, not a promise of production support.
 
-The inherited `.openai/hosting.json` still identifies the existing hackathon Site.
-Do not casually deploy this fork there before the bridge and two-account flow are
-verified; doing so without configuration would leave public inference unavailable.
+`.openai/hosting.json` identifies the separate `terra-astra-open` Site. The teammate-
+era `terra-astra-yc` project and URL remain untouched.
+
+The Site policy is public, which means any ChatGPT user may visit; Sites dispatch
+still returns its ChatGPT sign-in page to an unauthenticated browser before loading
+the renderer. Truly anonymous exploration therefore needs a renderer host outside
+ChatGPT Sites. The hosted Site-to-bridge status and device-code start contracts pass.
+A complete browser authorization and answer still requires the user to finish the
+OpenAI login page currently opened for handoff.
 
 Sites is a beta service with plan-dependent usage limits. The published documentation
 does not guarantee perpetual hosting or continued publication after cancellation

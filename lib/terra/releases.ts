@@ -1,7 +1,15 @@
 /** User-facing release history. Keep historical entries tied to their saved milestones. */
-export const currentVersion = '0.10.0-alpha.5';
+export const currentVersion = '0.10.0-alpha.6';
 
 export const releases = [
+  {
+    version: '0.10.0-alpha.6', date: '2026-09-14', dateLabel: '14 September 2026', title: 'Open to every ChatGPT user', milestone: 'Public alpha',
+    changes: [
+      'The personal fork is live at its own public Site without changing the hackathon deployment.',
+      'The hosted renderer reaches the isolated visitor account bridge through a stable supervised tunnel.',
+    ],
+    review: 'Hosted status and device-authorization start pass. Sites still requires ChatGPT sign-in before loading the renderer, and a complete visitor answer awaits browser login. The bridge depends on the owner’s Mac remaining awake, logged in and online.',
+  },
   {
     version: '0.10.0-alpha.5', date: '2026-09-14', dateLabel: '14 September 2026', title: 'The bridge can leave the edge', milestone: 'Private candidate',
     changes: ['The hosted proxy now uses the edge runtime’s supported redirect mode and still rejects every bridge redirect explicitly.'],

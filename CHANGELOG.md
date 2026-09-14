@@ -2,6 +2,11 @@
 
 Semantic versions label the experience; Sites version numbers identify saved deployment packages. They are separate counters. `lib/terra/releases.ts` is the source for the public history page and current build badge. Git tags identify exact source snapshots; native Sites records are authoritative for save/deploy status.
 
+## v0.10.0-alpha.6 — 2026-09-14 — Open to every ChatGPT user
+- Publishes the personal fork at its own public Sites URL without changing the hackathon deployment.
+- Connects Sites to the isolated bridge through a stable free ngrok domain; macOS restarts both services and Keychain holds the shared credential.
+- Hosted status and device-authorization start pass. Sites still requires ChatGPT sign-in before the renderer, and a complete visitor answer awaits browser login.
+
 ## v0.10.0-alpha.5 — 2026-09-14 — The bridge can leave the edge
 - Uses the edge runtime’s supported manual redirect mode and explicitly rejects every redirect response.
 - Fixes the hosted proxy failing before it contacted the external account bridge.
