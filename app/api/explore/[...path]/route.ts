@@ -49,7 +49,10 @@ async function handle(request: Request) {
       method: request.method,
       path,
     });
-    return Response.json({ error: 'The account connection service is offline. You can still explore the globe.' }, { status: 503, headers });
+    const diagnostic = request.headers.get('x-terra-bridge-debug') === token && error instanceof Error
+      ? { name: error.name, message: error.message.slice(0, 240) }
+      : undefined;
+    return Response.json({ error: 'The account connection service is offline. You can still explore the globe.', ...(diagnostic ? { diagnostic } : {}) }, { status: 503, headers });
   }
 }
 export const GET = handle;

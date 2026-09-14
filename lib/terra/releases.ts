@@ -1,7 +1,12 @@
 /** User-facing release history. Keep historical entries tied to their saved milestones. */
-export const currentVersion = '0.10.0-alpha.3';
+export const currentVersion = '0.10.0-alpha.4';
 
 export const releases = [
+  {
+    version: '0.10.0-alpha.4', date: '2026-09-14', dateLabel: '14 September 2026', title: 'A protected network probe', milestone: 'Private candidate',
+    changes: ['A service-credential-protected diagnostic can identify the Site-to-bridge network failure while public errors stay generic.'],
+    review: 'This is an operational probe for the private candidate; it never includes conversation or account data.',
+  },
   {
     version: '0.10.0-alpha.3', date: '2026-09-14', dateLabel: '14 September 2026', title: 'A visible service boundary', milestone: 'Private candidate',
     changes: ['Hosted bridge failures now emit sanitized operational telemetry without conversation or credential data.'],
