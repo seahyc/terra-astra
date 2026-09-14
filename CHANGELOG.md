@@ -2,6 +2,10 @@
 
 Semantic versions label the experience; Sites version numbers identify saved deployment packages. They are separate counters. `lib/terra/releases.ts` is the source for the public history page and current build badge. Git tags identify exact source snapshots; native Sites records are authoritative for save/deploy status.
 
+## v0.10.0-alpha.3 — 2026-09-14 — A visible service boundary
+- Records sanitized server telemetry when the hosted renderer cannot reach the account bridge: error type, bounded message, target host, method and route only.
+- Never records questions, answers, session cookies, device codes or service credentials.
+
 ## v0.10.0-alpha.2 — 2026-09-14 — A separate home for open exploration
 - Registers the personal fork as its own Sites project so publishing cannot replace the teammate-era hackathon deployment.
 - Keeps the renderer public while visitor-owned inference remains behind the isolated Codex account bridge.

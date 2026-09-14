@@ -1,7 +1,12 @@
 /** User-facing release history. Keep historical entries tied to their saved milestones. */
-export const currentVersion = '0.10.0-alpha.2';
+export const currentVersion = '0.10.0-alpha.3';
 
 export const releases = [
+  {
+    version: '0.10.0-alpha.3', date: '2026-09-14', dateLabel: '14 September 2026', title: 'A visible service boundary', milestone: 'Private candidate',
+    changes: ['Hosted bridge failures now emit sanitized operational telemetry without conversation or credential data.'],
+    review: 'The private renderer and external bridge are each healthy; this instrumentation isolates the remaining hosted network boundary.',
+  },
   {
     version: '0.10.0-alpha.2', date: '2026-09-14', dateLabel: '14 September 2026', title: 'A separate home for open exploration', milestone: 'Private candidate',
     changes: [

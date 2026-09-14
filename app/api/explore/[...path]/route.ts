@@ -41,7 +41,14 @@ async function handle(request: Request) {
       const value = response.headers.get(key); if (value) returned.set(key, value);
     }
     return new Response(response.body, { status: response.status, headers: returned });
-  } catch {
+  } catch (error) {
+    console.error('Terra bridge fetch failed', {
+      name: error instanceof Error ? error.name : 'UnknownError',
+      message: error instanceof Error ? error.message.slice(0, 240) : 'Unknown bridge failure',
+      host: (() => { try { return new URL(base).host; } catch { return 'invalid'; } })(),
+      method: request.method,
+      path,
+    });
     return Response.json({ error: 'The account connection service is offline. You can still explore the globe.' }, { status: 503, headers });
   }
 }
